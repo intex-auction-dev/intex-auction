@@ -59,6 +59,9 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            BASE_SHA=$(git hash-object -t tree /dev/null)
+          fi
           changed_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
           needed=$(printf '%s\n' "$changed_files" | node dev/local-chain/scripts/ci-local-contracts-needed.mjs)
           printf 'needed=%s\n' "$needed" >> "$GITHUB_OUTPUT"
