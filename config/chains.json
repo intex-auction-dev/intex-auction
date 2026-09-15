@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "originChainProfileId": "outbe-origin",
+  "defaultDisconnectedVenueChainId": 56,
+  "chains": [
+    {
+      "id": "outbe-origin",
+      "roles": [
+        "origin"
+      ],
+      "enabled": false,
+      "chainId": null,
+      "name": "Outbe Origin",
+      "nativeCurrency": null,
+      "explorerUrl": null,
+      "rpcUrls": [
+        "https://outbe-origin.invalid"
+      ],
+      "confirmationDepth": 1,
+      "logBatchSize": 2000,
+      "requestTimeoutMs": 5000,
+      "readRetryCount": 0
+    },
+    {
+      "id": "bnb-mainnet-venue",
+      "roles": [
+        "venue"
+      ],
+      "enabled": false,
+      "chainId": 56,
+      "name": "BNB Mainnet Venue",
+      "nativeCurrency": {
+        "name": "BNB",
+        "symbol": "BNB",
+        "decimals": 18
+      },
+      "explorerUrl": null,
+      "rpcUrls": [
+        "https://bnb-mainnet.invalid"
+      ],
+      "confirmationDepth": 12,
+      "logBatchSize": 2000,
+      "requestTimeoutMs": 10000,
+      "readRetryCount": 0
+    }
+  ]
+}

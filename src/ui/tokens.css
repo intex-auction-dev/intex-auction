@@ -1,0 +1,164 @@
+:root {
+  --font-sans: "Geist Variable", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Variable", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --apkt-fontFamily-mono: var(--font-sans) !important;
+  --color-background: #fafafa;
+  --color-surface: #ffffff;
+  --color-panel: #f4f4f5;
+  --color-foreground: #18181b;
+  --color-muted: #71717a;
+  --color-subtle: #a1a1aa;
+  --color-faint: #d4d4d8;
+  --color-label-soft: rgba(9, 9, 11, 0.6);
+  --color-line: rgba(9, 9, 11, 0.15);
+  --color-line-strong: rgba(9, 9, 11, 0.25);
+  --color-accent: #2563eb;
+  --color-accent-soft: #eaf1fe;
+  --color-accent-border: #bcd5fb;
+  --color-calendar-worldwide-day: #3b82f6;
+  --color-success: #15803d;
+  --color-success-soft: #e9f7ef;
+  --color-success-border: rgba(21, 128, 61, 0.28);
+  --color-success-border-strong: rgba(21, 128, 61, 0.42);
+  --color-success-glow: rgba(20, 184, 166, 0.26);
+  --color-danger: #be3455;
+  --color-danger-soft: #fdedf1;
+  --color-danger-border: rgba(190, 52, 85, 0.28);
+  --color-warning: #1d4ed8;
+  --color-warning-soft: #eff6ff;
+  --color-purple: #7c3aed;
+  --color-purple-soft: #f2ecfe;
+  --color-neutral: #52525b;
+  --color-ink: #111114;
+  --color-badge: #111114;
+  --color-accent-disabled: #9bb8ee;
+  --color-chain-bnb: #f0b90b;
+  --color-warning-border: #d9a441;
+  --color-ring-track: #eeeeef;
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --space-6: 28px;
+  --space-7: 36px;
+  --space-8: 48px;
+  --radius-button: 10px;
+  --radius-cta: 14px;
+  --radius-field: 12px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --shadow-surface: 0 1px 2px rgba(9, 9, 11, 0.04), 0 8px 24px rgba(9, 9, 11, 0.06);
+  --shadow-overlay: 0 24px 70px rgba(9, 9, 11, 0.3);
+  --shadow-pop: 0 2px 6px rgba(9, 9, 11, 0.06), 0 16px 40px rgba(9, 9, 11, 0.16);
+  --focus-ring: 0 0 0 3px rgba(244, 244, 245, 0.95), 0 0 0 5px var(--color-accent);
+  --motion-fast: 120ms;
+  --motion-normal: 180ms;
+  --motion-slow: 560ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-spring-soft: linear(
+    0,
+    0.096 8%,
+    0.34 18.2%,
+    0.605 28%,
+    0.822 38%,
+    0.97 48%,
+    1.045 56%,
+    1.062 62%,
+    1.048 68%,
+    1.025 75%,
+    1.008 82%,
+    0.998 88%,
+    1
+  );
+}
+
+.dark {
+  --color-background: #0b0b0f;
+  --color-surface: #16161b;
+  --color-panel: #1d1d24;
+  --color-foreground: #f4f4f5;
+  --color-muted: #a1a1aa;
+  --color-subtle: #71717a;
+  --color-faint: #52525b;
+  --color-label-soft: rgba(255, 255, 255, 0.55);
+  --color-line: rgba(255, 255, 255, 0.1);
+  --color-line-strong: rgba(255, 255, 255, 0.18);
+  --color-accent: #3b82f6;
+  --color-accent-soft: rgba(59, 130, 246, 0.16);
+  --color-accent-border: rgba(59, 130, 246, 0.42);
+  --color-calendar-worldwide-day: #60a5fa;
+  --color-success: #4ade80;
+  --color-success-soft: rgba(34, 197, 94, 0.14);
+  --color-success-border: rgba(74, 222, 128, 0.32);
+  --color-success-border-strong: rgba(74, 222, 128, 0.46);
+  --color-success-glow: rgba(20, 184, 166, 0.22);
+  --color-danger: #fb7185;
+  --color-danger-soft: rgba(244, 63, 94, 0.14);
+  --color-danger-border: rgba(251, 113, 133, 0.32);
+  --color-warning: #60a5fa;
+  --color-warning-soft: rgba(59, 130, 246, 0.14);
+  --color-purple: #a78bfa;
+  --color-purple-soft: rgba(167, 139, 250, 0.15);
+  --color-neutral: #a1a1aa;
+  --color-ink: #fafafa;
+  --color-badge: #111114;
+  --color-accent-disabled: rgba(59, 130, 246, 0.32);
+  --color-chain-bnb: #f0b90b;
+  --color-warning-border: rgba(217, 164, 65, 0.5);
+  --color-ring-track: rgba(255, 255, 255, 0.12);
+  --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-overlay: 0 24px 70px rgba(0, 0, 0, 0.65);
+  --shadow-pop: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.4);
+  --focus-ring: 0 0 0 3px rgba(11, 11, 15, 0.95), 0 0 0 5px var(--color-accent);
+}
+
+.dark .app-shell__header {
+  background: rgba(11, 11, 15, 0.72);
+}
+.dark .dialog-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+.dark .bidder-receipt--neutral .bidder-receipt__header > span {
+  background: rgba(255, 255, 255, 0.1);
+}
+.dark .auction-calendar-trigger:hover,
+.dark .auction-calendar-trigger[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dark .auction-lifecycle__connector {
+  background: rgba(255, 255, 255, 0.14);
+}
+.dark .app-shell__main::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  background-clip: content-box;
+}
+.dark .tooltip__content {
+  background: var(--color-panel);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-line);
+}
+.dark .auction-lifecycle__step--complete .auction-lifecycle__marker,
+.dark .auction-lifecycle__step--complete .auction-lifecycle__marker > span {
+  background: var(--color-background);
+}
+.dark .auction-lifecycle__step--complete .auction-lifecycle__marker {
+  color: var(--color-foreground);
+}
+.dark .auction-lifecycle__step--active .auction-lifecycle__marker {
+  box-shadow:
+    0 0 16px 2px rgba(56, 120, 200, 0.55),
+    0 0 6px 1px rgba(56, 120, 200, 0.45);
+}
+.dark .auction-product-rail .protocol-evidence > summary {
+  background: var(--color-panel);
+  color: var(--color-foreground);
+}
+.dark .tooltip__content {
+  background: var(--color-panel);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-line);
+}
+.dark .tooltip__arrow {
+  background: var(--color-panel);
+}

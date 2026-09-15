@@ -1,0 +1,285 @@
+/* Venue demand ladder — relocated from app/app.css (Step 7, pure move; no declaration edited). */
+
+.venue-demand-card {
+  overflow: visible;
+  padding: 22px 24px 20px;
+}
+.ladder-heading {
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.ladder-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.ladder-heading p,
+.venue-demand-card__message {
+  margin: 2px 0 0;
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.venue-demand-card__message {
+  margin-top: 10px;
+}
+.venue-demand-curve {
+  margin-top: 0;
+}
+.venue-demand-curve svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.venue-demand-curve text {
+  fill: var(--color-subtle);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+}
+.venue-demand-curve__grid {
+  stroke: var(--color-line);
+  stroke-width: 1;
+}
+.venue-demand-curve__baseline {
+  stroke: var(--color-faint);
+  stroke-width: 1.5;
+}
+.venue-demand-curve__line {
+  fill: none;
+  stroke: var(--color-subtle);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+}
+.venue-demand-curve__clearing {
+  stroke: var(--color-accent);
+  stroke-width: 1.5;
+}
+.venue-demand-curve__clearing-badge {
+  fill: var(--color-accent-soft);
+}
+.venue-demand-curve .venue-demand-curve__axis-tick,
+.venue-demand-curve .venue-demand-curve__quantity-tick {
+  fill: var(--color-subtle);
+  font-size: 15px;
+  font-weight: 400;
+}
+.venue-demand-curve .venue-demand-curve__axis-title {
+  fill: var(--color-subtle);
+  font-weight: 500;
+}
+.venue-demand-curve .venue-demand-curve__tooltip-title,
+.venue-demand-curve .venue-demand-curve__tooltip-subtitle,
+.venue-demand-curve .venue-demand-curve__tooltip-label,
+.venue-demand-curve .venue-demand-curve__tooltip-value {
+  font-size: 15px;
+}
+.venue-demand-curve .venue-demand-curve__tooltip-title {
+  font-weight: 500;
+}
+.venue-demand-curve .venue-demand-curve__tooltip-label {
+  fill: var(--color-muted);
+  font-weight: 400;
+}
+.venue-demand-curve .venue-demand-curve__tooltip-value {
+  fill: var(--color-foreground);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.venue-demand-curve__tooltip-rule {
+  stroke: var(--color-line);
+  stroke-width: 1;
+}
+.venue-demand-curve__tooltip--inverse .venue-demand-curve__tooltip-label {
+  fill: #fff;
+  opacity: 0.72;
+}
+.venue-demand-curve__tooltip--inverse .venue-demand-curve__tooltip-value {
+  fill: #fff;
+}
+.venue-demand-curve__tooltip--inverse .venue-demand-curve__tooltip-rule {
+  stroke: #fff;
+  opacity: 0.28;
+}
+.venue-demand-curve .venue-demand-curve__tooltip-subtitle {
+  font-weight: 600;
+}
+.venue-demand-curve .venue-demand-curve__tooltip--clearing .venue-demand-curve__tooltip-title,
+.venue-demand-curve .venue-demand-curve__tooltip--clearing .venue-demand-curve__tooltip-subtitle {
+  fill: var(--color-accent);
+}
+.venue-demand-curve .venue-demand-curve__tooltip--clearing .venue-demand-curve__tooltip-subtitle {
+  font-weight: 500;
+  opacity: 0.72;
+}
+.venue-demand-curve .venue-demand-curve__tooltip--inverse .venue-demand-curve__tooltip-title,
+.venue-demand-curve .venue-demand-curve__tooltip--inverse .venue-demand-curve__tooltip-subtitle {
+  fill: #fff;
+}
+.venue-demand-curve .venue-demand-curve__tooltip--inverse .venue-demand-curve__tooltip-title {
+  opacity: 0.72;
+}
+.venue-demand-curve .venue-demand-curve__tooltip--surface .venue-demand-curve__tooltip-title {
+  fill: var(--color-muted);
+}
+.venue-demand-curve .venue-demand-curve__tooltip--surface .venue-demand-curve__tooltip-subtitle {
+  fill: var(--color-foreground);
+}
+@keyframes venue-demand-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes venue-demand-tooltip-in-below {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes venue-demand-hover-band-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.1;
+  }
+}
+@keyframes venue-demand-hover-step-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.venue-demand-curve__tooltip--hover {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: venue-demand-tooltip-in var(--motion-normal) var(--ease-out) both;
+}
+.venue-demand-curve__tooltip--hover[data-side="bottom"] {
+  transform-origin: center top;
+  animation-name: venue-demand-tooltip-in-below;
+}
+.venue-demand-curve__hover-band {
+  fill: var(--color-foreground);
+  opacity: 0.1;
+  animation: venue-demand-hover-band-in var(--motion-normal) var(--ease-out) both;
+}
+.venue-demand-curve__hover-step {
+  fill: none;
+  stroke: var(--color-foreground);
+  stroke-width: 3;
+  animation: venue-demand-hover-step-in var(--motion-normal) var(--ease-out) both;
+}
+.venue-demand-curve__explorer {
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color var(--motion-fast) ease;
+}
+.venue-demand-curve__explorer:hover,
+.venue-demand-curve__explorer:focus-visible {
+  color: var(--color-foreground);
+}
+.venue-demand-curve__tooltip--inverse .venue-demand-curve__explorer {
+  color: #fff;
+  opacity: 0.78;
+}
+.venue-demand-curve__tooltip--inverse .venue-demand-curve__explorer:hover {
+  opacity: 1;
+}
+.venue-demand-curve__note {
+  margin: 10px 0 0;
+  color: var(--color-subtle);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.venue-demand-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 15px;
+}
+.venue-demand-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.venue-demand-legend i {
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--color-subtle);
+}
+.venue-demand-legend__clearing {
+  border-top: 3px solid var(--color-accent) !important;
+}
+.component-warning {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.component-issues {
+  margin: 10px 0 0;
+  padding: 10px 12px 10px 30px;
+  border-radius: 10px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 15px;
+}
+.technical-details {
+  margin-top: 14px;
+  border-top: 1px solid var(--color-line);
+}
+.technical-details > summary {
+  padding: 13px 0 2px;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+.venue-demand-technical {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  margin: 12px 0;
+}
+.venue-demand-technical div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-line);
+  font-size: 15px;
+}
+.venue-demand-technical dt {
+  color: var(--color-muted);
+}
+.venue-demand-technical dd {
+  margin: 0;
+  text-align: right;
+}
+.table-scroll {
+  max-width: 100%;
+  overflow: auto;
+  margin-top: 12px;
+}

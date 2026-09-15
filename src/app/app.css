@@ -1,0 +1,338 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+body {
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  color: inherit;
+}
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  border-radius: var(--radius-button);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h2 {
+  color: var(--color-foreground);
+  font-size: 19px;
+  font-weight: 600;
+}
+code {
+  padding: 2px 5px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  background: var(--color-panel);
+  color: var(--color-neutral);
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+.status-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--color-accent-border);
+  border-top-color: var(--color-accent);
+  border-radius: 999px;
+  animation: spin 0.9s linear infinite;
+}
+.lucide-loader-circle {
+  animation: spin 0.9s linear infinite;
+}
+.runtime-summary {
+  overflow: hidden;
+}
+.runtime-summary dl {
+  margin: 0;
+}
+.runtime-summary__row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  min-height: 58px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--color-line);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.runtime-summary__row:last-child {
+  border-bottom: 0;
+}
+.runtime-summary dt {
+  color: var(--color-muted);
+}
+.runtime-summary dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-foreground);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.issues-card {
+  padding: 20px 24px;
+}
+.issues-card ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+}
+.issues-card li,
+.configuration-hint,
+.gate-card__copy {
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.configuration-hint {
+  margin: 0 6px;
+  color: var(--color-neutral);
+  text-align: center;
+}
+.gate-page,
+.viewport-gate {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+  background: var(--color-background);
+  font-family: var(--font-sans);
+}
+.gate-card {
+  width: min(620px, 100%);
+  padding: 28px;
+}
+.gate-card__eyebrow {
+  margin-bottom: 7px;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gate-card h1 {
+  margin-bottom: 10px;
+  color: var(--color-foreground);
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+}
+.gate-card__copy > :last-child {
+  margin-bottom: 0;
+}
+.viewport-gate {
+  display: none;
+}
+.public-discovery,
+.public-auction-product,
+.auction-product-main {
+  display: grid;
+  gap: 18px;
+}
+/* Cross-cutting card-entry choreography. Kept central because one @media block sequences the
+   `auction-card-enter` keyframe (defined in auction/public-auction-view.css) across selectors owned
+   by three different components/files: discovery (.auction-calendar-trigger, .demand-dots),
+   the product layout (.auction-product-main/.auction-product-rail > .card) and completion
+   (.portfolio-card). Splitting it would reorder equal-specificity animation-delay declarations. */
+@media (prefers-reduced-motion: no-preference) {
+  .auction-product-main > .card,
+  .auction-product-rail > .card {
+    will-change: transform, opacity;
+  }
+  .auction-page-heading--discovery .auction-calendar-trigger,
+  .auction-page-heading--discovery .demand-dots {
+    animation: auction-card-enter var(--motion-slow) var(--ease-spring-soft) both;
+  }
+  .auction-page-heading--discovery .auction-calendar-trigger {
+    animation-delay: 0ms;
+  }
+  .auction-page-heading--discovery .demand-dots {
+    animation-delay: 60ms;
+  }
+  .auction-product-main > .card {
+    animation: auction-card-enter var(--motion-slow) var(--ease-spring-soft) both;
+  }
+  .auction-product-main > .card:nth-child(2) {
+    animation-delay: 90ms;
+  }
+  .auction-product-main > .card:nth-child(3) {
+    animation-delay: 180ms;
+  }
+  .auction-product-main > .card:nth-child(4) {
+    animation-delay: 270ms;
+  }
+  .auction-product-main > .card:nth-child(5) {
+    animation-delay: 360ms;
+  }
+  .auction-product-rail > .card {
+    animation: auction-card-enter var(--motion-slow) var(--ease-spring-soft) both;
+  }
+  .auction-product-rail > .card:nth-child(1) {
+    animation-delay: 450ms;
+  }
+  .auction-product-rail > .card:nth-child(2) {
+    animation-delay: 540ms;
+  }
+
+  .portfolio-card {
+    animation: auction-card-enter var(--motion-slow) var(--ease-spring-soft) both;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .auction-page-heading__status--live .badge__dot::before {
+    animation: none;
+  }
+  .demand-popover__bar {
+    transition: none;
+  }
+  .demand-dots__bars {
+    transition: none;
+  }
+  .auction-lifecycle__marker {
+    transition: none;
+  }
+  .auction-lifecycle__connector {
+    transition: none;
+  }
+  .commit-panel__transaction-step {
+    transition: none;
+  }
+  .portfolio-row {
+    transition: none;
+  }
+  .auction-product-main > .card {
+    animation: none;
+  }
+  .auction-product-rail > .card {
+    animation: none;
+  }
+  .portfolio-card {
+    animation: none;
+  }
+}
+@media (max-width: 599px), (max-height: 719px) {
+  .supported-viewport {
+    display: none;
+  }
+  .viewport-gate {
+    display: flex;
+  }
+}
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+body {
+  height: 100dvh;
+  min-height: 0;
+}
+.supported-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.public-discovery,
+.public-auction-product {
+  gap: 18px;
+}
+.app-shell__main::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+.app-shell__main::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 6px;
+  background: rgba(9, 9, 11, 0.15);
+  background-clip: content-box;
+}
+.auction-loading-state {
+  position: fixed;
+  inset: 64px 0 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.auction-loading-state__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transition:
+    opacity var(--motion-normal) var(--ease-out),
+    transform var(--motion-normal) var(--ease-out);
+  will-change: opacity, transform;
+}
+.auction-loading-state__content--shown {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.auction-loading-state__arc {
+  width: 52px;
+  height: 52px;
+  color: var(--color-accent);
+}
+.auction-loading-state__title {
+  margin: 0;
+  color: var(--color-foreground);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.auction-loading-state[data-active="true"] + .public-discovery > .card {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auction-loading-state__content {
+    transition-duration: 1ms;
+  }
+}

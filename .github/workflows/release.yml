@@ -1,0 +1,87 @@
+name: Publish release
+
+on:
+  push:
+    tags: ['v*']
+  # A failed or interrupted run can be retried against the same tag instead of burning a version.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish, for example v1.0.3
+        required: true
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    name: Package and publish release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup pinned toolchain
+        uses: ./.github/actions/setup-toolchain
+
+      - name: Verify release identity
+        run: |
+          set -euo pipefail
+          node -e "const pkg=require('./package.json'); if (process.env.RELEASE_TAG !== 'v' + pkg.version) throw new Error('Tag must equal v' + pkg.version); console.log(process.env.RELEASE_TAG);"
+          git diff --quiet
+          commit="$(git rev-parse HEAD)"
+          test "$(git rev-parse --verify "$RELEASE_TAG^{commit}")" = "$commit"
+          # Both the packaged metadata and the bundled identity must record the tagged commit. github.sha
+          # is the ref the run started from, which is the default branch for a workflow_dispatch retry.
+          printf 'ITX_RELEASE_COMMIT=%s\nITX_APP_COMMIT=%s\n' "$commit" "$commit" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify and package
+        env:
+          ITX_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          npm run check
+          npm run release:package
+          npm run release:verify
+
+      # Exact build environment stays out of the checksummed archive so the artifact can be
+      # reproduced from the tag; it is recorded here instead.
+      - name: Record build provenance
+        run: |
+          set -euo pipefail
+          {
+            printf '## %s\n\n' "$RELEASE_TAG"
+            printf -- '- built on %s with %s and npm %s\n' "$RUNNER_OS" "$(node --version)" "$(npm --version)"
+            printf -- '- commit `%s`\n\n' "$ITX_RELEASE_COMMIT"
+            printf '```\n%s```\n' "$(cat .release/SHA256SUMS)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # FILES.sha256 is published alongside the archive because it reproduces byte for byte from the
+      # tagged commit on any Node 24 with the pinned npm, while the gzip container does not.
+      - name: Publish GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          assets=(.release/*.tar.gz .release/SHA256SUMS .release/intex-auction-*/FILES.sha256)
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" --title "$RELEASE_TAG" --generate-notes --verify-tag
+          fi

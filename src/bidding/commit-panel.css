@@ -1,0 +1,1026 @@
+.commit-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  animation: none;
+}
+
+.commit-panel h2,
+.commit-panel p {
+  margin: 0;
+}
+
+.commit-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.commit-panel__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.commit-panel__fields > label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__fields input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.commit-panel__fields input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.commit-panel__fields small {
+  color: var(--color-subtle);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.commit-panel__rate-input {
+  position: relative;
+  display: block;
+}
+
+.commit-panel__rate-input input {
+  padding-right: 30px;
+}
+
+.commit-panel__rate-input i {
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-style: normal;
+  transform: translateY(-50%);
+}
+
+.commit-panel__validation,
+.commit-panel__failure,
+.commit-panel__backup-warning {
+  padding: 11px 12px;
+  border-radius: var(--radius-field);
+  font-size: 15px;
+  line-height: 1.45;
+  border: 1px solid var(--color-warning-border);
+  background: var(--color-warning-soft);
+}
+
+.commit-panel--critical {
+  border-color: var(--color-danger);
+}
+
+.commit-panel__hash {
+  display: block;
+  padding: 10px 11px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-panel__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.commit-panel__title-row h2 {
+  margin: 0;
+}
+
+@media (max-width: 1320px) {
+  .commit-panel__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.commit-panel__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 1320px) {
+  .commit-panel__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.commit-panel--prompt {
+  gap: 16px;
+  min-height: 118px;
+}
+
+.commit-panel--prompt h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel--expanded {
+  gap: 14px;
+}
+
+.commit-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.commit-panel__header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.commit-panel__header > button {
+  display: inline-flex;
+  min-width: 34px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.commit-panel__header > button:hover {
+  background: var(--color-panel);
+  color: var(--color-foreground);
+}
+
+.commit-panel__header > button:focus-visible,
+.commit-panel__stepper button:focus-visible,
+.commit-panel__stepper input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.commit-panel__currency-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  /* Reset the fieldset user-agent styles; this element is a control group, not a visual frame. */
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.commit-panel__currency-fields > div {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.commit-panel__currency-fields > div > span,
+.commit-panel__field > label {
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__currency-fields > div > button {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  box-shadow: inset 0 1px 0 var(--color-surface);
+  cursor: not-allowed;
+  text-align: left;
+}
+
+.commit-panel__currency-fields > div > button:disabled {
+  opacity: 1;
+}
+
+.commit-panel__currency-fields strong {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-panel__currency-fields svg {
+  color: var(--color-muted);
+}
+
+.commit-panel--expanded .commit-panel__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.commit-panel__field {
+  display: grid;
+  gap: 7px;
+}
+
+.commit-panel__field small {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.commit-panel__stepper {
+  display: flex;
+  min-height: 44px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-surface);
+}
+
+.commit-panel__stepper > button {
+  display: inline-flex;
+  width: 38px;
+  min-width: 38px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: var(--color-panel);
+  color: var(--color-foreground);
+  cursor: pointer;
+}
+
+.commit-panel__stepper > button:first-child {
+  border-right: 1px solid var(--color-line);
+}
+
+.commit-panel__stepper > button:last-child {
+  border-left: 1px solid var(--color-line);
+}
+
+.commit-panel__stepper > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.commit-panel__stepper > span {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+}
+
+.commit-panel--expanded .commit-panel__stepper input {
+  min-width: 1ch;
+  max-width: 24ch;
+  min-height: 0;
+  flex: 0 1 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-foreground);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.commit-panel__stepper i {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.commit-panel__bid-details {
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-panel);
+}
+
+.commit-panel__bid-details-title {
+  margin-bottom: 14px;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__bid-details dl {
+  margin: 0;
+}
+
+.commit-panel__bid-details dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.commit-panel__bid-details dl > div:first-child {
+  padding-top: 0;
+}
+
+.commit-panel__bid-details dl > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.commit-panel__bid-details dt {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.commit-panel__bid-details dd {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  text-align: right;
+}
+
+.commit-panel__bid-details dd strong {
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.commit-panel__bid-details dd small {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.commit-panel__timing {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  background: var(--color-panel);
+}
+
+.commit-panel__timing > strong {
+  margin-bottom: 2px;
+  color: var(--color-subtle);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__timing > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.commit-panel__timing i,
+.commit-panel__timing b {
+  font-size: 15px;
+  font-style: normal;
+}
+
+.commit-panel__timing i {
+  color: var(--color-muted);
+}
+
+.commit-panel__timing b {
+  color: var(--color-foreground);
+  font-weight: 500;
+  text-align: right;
+}
+
+.commit-panel .commit-panel__bond-copy {
+  margin: 10px 0 0;
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.commit-panel__contracts {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+}
+
+.commit-panel__contracts > button {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border: 0;
+  background: var(--color-panel);
+  color: var(--color-foreground);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.commit-panel__contracts > button > strong {
+  flex: 1 1 auto;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__contracts > button > span {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.commit-panel__contracts > button > svg:first-child {
+  color: var(--color-success);
+}
+
+.commit-panel__contracts > button > svg:last-child {
+  transition: transform var(--motion-normal) ease;
+}
+
+.commit-panel__contracts > button[aria-expanded="true"] > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.commit-panel__contract-list-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--motion-normal) ease;
+}
+
+.commit-panel__contract-list-wrap--open {
+  grid-template-rows: 1fr;
+}
+
+.commit-panel__contract-list {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity var(--motion-normal) ease;
+}
+
+.commit-panel__contract-list-wrap--open .commit-panel__contract-list {
+  border-top: 1px solid var(--color-line);
+  opacity: 1;
+}
+
+.commit-panel__contract-list > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.commit-panel__contract-list > .commit-panel__conversion-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.commit-panel__conversion-row i {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-style: normal;
+}
+
+.commit-panel__conversion-row b {
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.commit-panel__contract-list > div:last-child {
+  border-bottom: 0;
+}
+
+.commit-panel__contract-identity,
+.commit-panel__contract-details,
+.commit-panel__contract-links,
+.commit-panel__contract-links a {
+  display: flex;
+  align-items: center;
+}
+
+.commit-panel__contract-identity {
+  gap: 8px;
+}
+
+.commit-panel__contract-identity strong,
+.commit-panel__contract-identity code,
+.commit-panel__contract-details small,
+.commit-panel__contract-links a {
+  font-size: 15px;
+}
+
+.commit-panel__contract-identity code {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-subtle);
+  font-family: var(--font-mono);
+}
+
+.commit-panel__contract-identity button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.commit-panel__contract-identity .commit-panel__contract-copy--copied {
+  color: var(--color-success);
+}
+
+.commit-panel__contract-details {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.commit-panel__contract-details small {
+  color: var(--color-muted);
+}
+
+.commit-panel__contract-links {
+  flex: 0 0 auto;
+  gap: 12px;
+}
+
+.commit-panel__contract-links a {
+  gap: 4px;
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.commit-panel__confirmation,
+.commit-panel__transaction-steps {
+  display: grid;
+  gap: 12px;
+}
+
+.commit-panel__back {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__back:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.commit-panel__transaction-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-panel);
+  transition:
+    border-color var(--motion-normal) ease,
+    background-color var(--motion-normal) ease;
+}
+
+.commit-panel__transaction-step--active {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+}
+
+.commit-panel__transaction-number {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-faint);
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__transaction-step--active .commit-panel__transaction-number {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.commit-panel__transaction-step--complete .commit-panel__transaction-number {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.commit-panel__transaction-step > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.commit-panel__transaction-step strong,
+.commit-panel__transaction-step p {
+  font-size: 15px;
+}
+
+.commit-panel__transaction-step strong {
+  font-weight: 600;
+}
+
+.commit-panel .commit-panel__transaction-step p {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.45;
+}
+
+.commit-panel__step-action {
+  width: fit-content;
+  min-height: 38px;
+  margin-top: 7px;
+  padding: 9px 13px;
+}
+
+.commit-panel__transaction-status {
+  padding: 9px 11px;
+  margin-top: 8px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-panel);
+}
+
+.commit-panel__transaction-step--active .commit-panel__transaction-status {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+}
+
+.commit-panel__currency-selector {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.commit-panel__currency-selector > span {
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.commit-panel__currency-trigger {
+  display: flex;
+  min-height: 46px;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.commit-panel__currency-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.commit-panel__currency-trigger[data-disabled] {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.commit-panel__currency-trigger__code {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.commit-panel__currency-trigger__icon {
+  display: inline-flex;
+  color: var(--color-muted);
+  flex: none;
+  margin-right: 2px;
+}
+
+.commit-panel__currency-anchor {
+  z-index: 130;
+  outline: none;
+}
+
+.commit-panel__currency-popup {
+  z-index: 130;
+  min-width: var(--anchor-width);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-panel);
+  color: var(--color-foreground);
+  box-shadow: var(--shadow-pop);
+  outline: none;
+}
+
+.commit-panel__currency-list {
+  max-height: min(var(--available-height), 320px);
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.commit-panel__currency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: var(--radius-field);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.commit-panel__currency-item[data-highlighted] {
+  background: var(--color-accent-soft);
+}
+
+.commit-panel__currency-item[data-selected] {
+  color: var(--color-accent);
+}
+
+.commit-panel__currency-item[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commit-panel__stepper {
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
+}
+
+.commit-panel__stepper:hover {
+  border-color: var(--color-line-strong);
+  box-shadow: 0 5px 14px rgba(9, 9, 11, 0.06);
+}
+
+.commit-panel__stepper > button {
+  transition:
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
+}
+
+.commit-panel__stepper > button:not(:disabled):hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.commit-panel__stepper > button:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+.commit-panel__currency-trigger {
+  transition:
+    background var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
+}
+
+.commit-panel__currency-trigger:not([data-disabled]):hover {
+  border-color: var(--color-line-strong);
+  background: var(--color-panel);
+  box-shadow: 0 5px 14px rgba(9, 9, 11, 0.06);
+}
+
+.commit-panel__currency-popup {
+  transition:
+    opacity var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
+}
+
+.commit-panel__currency-popup[data-starting-style],
+.commit-panel__currency-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.commit-panel--receipt {
+  gap: 13px;
+}
+.commit-panel--receipt > h2 {
+  margin-bottom: 3px;
+}
+.commit-panel__receipt-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.commit-panel__receipt-actions .button:only-child {
+  grid-column: 1 / -1;
+}
+.commit-panel__receipt-actions .button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  box-shadow: none;
+}
+.commit-panel__receipt-actions .button:not(:disabled):hover {
+  background: var(--color-panel);
+  filter: none;
+  box-shadow: none;
+}
+@media (max-width: 420px) {
+  .commit-panel__receipt-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.commit-panel--bond-returned {
+  gap: 13px;
+}
+.commit-panel--bond-returned h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.commit-panel__bond-returned-banner {
+  padding: 13px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 26%, var(--color-line));
+  border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--color-success) 7%, var(--color-surface));
+  color: var(--color-foreground);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.commit-panel__bond-summary {
+  display: grid;
+  margin: 0;
+}
+.commit-panel__bond-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-line);
+}
+.commit-panel__bond-summary > div:first-child {
+  border-top: 0;
+}
+.commit-panel__bond-summary dt {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+.commit-panel__bond-summary dd {
+  margin: 0;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: right;
+}
+/* Action card (relocated from app/app.css) — relocated from app/app.css (Step 7, pure move; no declaration edited). */
+.action-card {
+  padding: 20px 22px;
+}
+.action-card h2 {
+  margin: 0 0 16px;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.action-card > p {
+  margin: 12px 0 0;
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.action-card__deadline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-panel);
+}
+.action-card__deadline span {
+  color: var(--color-subtle);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.action-card__deadline strong {
+  color: var(--color-foreground);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.action-card__summary {
+  margin: 18px 0;
+  padding: 4px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-panel);
+}
+.action-card__summary div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--color-line);
+}
+.action-card__summary div:first-child {
+  border-top: 0;
+}
+.action-card__summary span {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+.action-card__summary strong {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.action-card__button {
+  width: 100%;
+}
+.action-card .action-card__footnote {
+  margin-top: 10px;
+  color: var(--color-subtle);
+  font-size: 15px;
+  text-align: left;
+}
+.action-card {
+  min-height: 118px;
+}
+.action-card > p {
+  margin: 0;
+}
+.action-card__button {
+  min-height: 41px;
+}
+.action-card__button:disabled {
+  background: var(--color-accent);
+  color: #fff;
+  opacity: 1;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 1px 1px rgba(37, 99, 235, 0.45),
+    0 4px 12px rgba(37, 99, 235, 0.2);
+}

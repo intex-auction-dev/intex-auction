@@ -1,0 +1,243 @@
+/* Public discovery view (demand dots/history/popover) — relocated from app/app.css (Step 7, pure move; no declaration edited). */
+
+.demand-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.demand-dots__bars {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background-color var(--motion-fast) ease;
+}
+.demand-dots__bar {
+  display: block;
+  width: 4px;
+  min-height: 4px;
+  border-radius: 2px;
+  background: var(--color-faint);
+}
+.demand-dots__bar--success {
+  background: var(--color-accent);
+}
+.demand-dots__bar--danger {
+  background: var(--color-danger);
+}
+.demand-dots__bar--unknown {
+  background: var(--color-faint);
+}
+.demand-dots {
+  position: relative;
+}
+.demand-dots__bars {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.demand-dots__bars:hover,
+.demand-dots__bars:focus-visible {
+  background: var(--color-background);
+  outline: none;
+}
+.demand-history-popover {
+  position: fixed;
+  z-index: 130;
+  width: 420px;
+  padding: 18px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+.demand-history-popover > strong {
+  display: block;
+  margin-bottom: 14px;
+  text-align: center;
+  font-size: 15px;
+}
+.demand-history-chart {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: end;
+  gap: 8px;
+  height: 132px;
+  padding: 8px 8px 24px;
+  border-bottom: 1px solid var(--color-line);
+}
+.demand-history-chart > div {
+  position: relative;
+  display: flex;
+  height: 100px;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.demand-history-chart > div > i {
+  width: 28px;
+}
+.demand-history-chart > div > span {
+  position: absolute;
+  top: 105px;
+  font-size: 15px;
+  color: var(--color-subtle);
+}
+.demand-history-popover > small {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  font-size: 15px;
+  color: var(--color-muted);
+}
+.demand-history-popover > small b {
+  color: var(--color-danger);
+}
+.demand-dots__bars {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.demand-dots__bars:hover,
+.demand-dots__bars[aria-expanded="true"] {
+  background: var(--color-soft);
+}
+.demand-popover-anchor {
+  z-index: 130;
+}
+.demand-popover {
+  width: 420px;
+  padding: 18px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+.demand-popover__header {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.demand-popover__header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: none;
+}
+.demand-popover__header button:disabled {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+}
+.demand-popover__chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.demand-popover__gridline {
+  stroke: var(--color-line);
+  stroke-width: 0.5;
+}
+.demand-popover__axis-label,
+.demand-popover__date {
+  fill: var(--color-subtle);
+  font-size: 15px;
+}
+.demand-popover__axis-label--baseline {
+  fill: var(--color-foreground);
+  font-weight: 600;
+}
+.demand-popover__bar-base {
+  fill: rgba(37, 99, 235, 0.3);
+  transition: fill var(--motion-normal) ease;
+}
+.demand-popover__baseline {
+  stroke: var(--color-foreground);
+  stroke-width: 1;
+  opacity: 0.25;
+}
+.demand-popover__date--cancelled {
+  fill: var(--color-danger);
+  font-weight: 600;
+}
+.demand-popover__empty {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+}
+.demand-popover__legend {
+  display: flex;
+  min-height: 33px;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+.demand-popover__legend b {
+  color: var(--color-danger);
+}
+@keyframes demand-page-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes demand-page-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes demand-page-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Relocated from the deleted app/demand-popover.css stub (rendered by the demand popover). */
+.demand-popover__header strong {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Relocated from app/app.css (Step 7 follow-up, pure move; no declaration edited).
+   References demand-page-left / demand-page-right / demand-page-fade, defined above in this file. */
+@media (prefers-reduced-motion: no-preference) {
+  .demand-popover__page--left {
+    animation: demand-page-left var(--motion-normal) var(--ease-out) both;
+  }
+  .demand-popover__page--right {
+    animation: demand-page-right var(--motion-normal) var(--ease-out) both;
+  }
+  .demand-popover__page--initial {
+    animation: demand-page-fade var(--motion-normal) var(--ease-out) both;
+  }
+}

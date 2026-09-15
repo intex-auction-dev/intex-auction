@@ -1,0 +1,230 @@
+.recovery-card {
+  min-width: 0;
+}
+
+.recovery-card__heading,
+.recovery-item__heading,
+.recovery-issue > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recovery-card__heading > div,
+.recovery-item__heading > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.recovery-card__heading span,
+.recovery-item__heading span {
+  display: block;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.recovery-card h2,
+.recovery-item h3 {
+  margin: 0;
+}
+
+.recovery-card p {
+  margin: 0;
+}
+
+.recovery-card {
+  display: grid;
+  gap: 14px;
+}
+
+.recovery-card--auction {
+  padding: 18px;
+}
+
+.recovery-card__heading > svg {
+  flex: 0 0 auto;
+}
+
+.recovery-empty,
+.recovery-storage-warning,
+.recovery-transaction-copy {
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.recovery-empty--danger,
+.recovery-storage-warning {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 28%, var(--color-line));
+  border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--color-danger) 5%, var(--color-surface));
+  color: var(--color-danger);
+}
+
+.recovery-list {
+  display: grid;
+  gap: 12px;
+}
+
+.recovery-item,
+.recovery-issue {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-background));
+}
+
+.recovery-item--claimable,
+.recovery-item--confirmed {
+  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-line));
+}
+
+.recovery-item--reconciliation-pending,
+.recovery-item--waiting,
+.recovery-item--submitted,
+.recovery-item--confirming,
+.recovery-item--awaiting-wallet {
+  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-line));
+}
+
+.recovery-item--read-failure,
+.recovery-item--incompatible-historical-contract,
+.recovery-issue {
+  border-color: color-mix(in srgb, var(--color-danger) 34%, var(--color-line));
+}
+
+.recovery-item__heading {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.recovery-item__explanation {
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.recovery-contract,
+.recovery-transaction {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.recovery-contract > span,
+.recovery-transaction > span {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.recovery-contract code,
+.recovery-transaction code,
+.recovery-issue code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-foreground);
+  font-size: 15px;
+}
+
+.recovery-contract .badge {
+  justify-self: start;
+}
+
+.recovery-economics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.recovery-economics > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  background: var(--color-surface);
+}
+
+.recovery-economics span,
+.recovery-deadline dt {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.recovery-economics strong {
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.recovery-deadline {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.recovery-deadline > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+}
+
+.recovery-deadline dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-size: 15px;
+}
+
+.recovery-item__claim {
+  width: 100%;
+}
+
+.recovery-issue > span,
+.recovery-issue p {
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1320px) {
+  .recovery-economics {
+    grid-template-columns: 1fr;
+  }
+
+  .recovery-deadline > div {
+    grid-template-columns: 1fr;
+  }
+
+  .recovery-deadline dd {
+    text-align: left;
+  }
+}
+
+.recovery-card--claim {
+  gap: 13px;
+  padding: 20px 22px;
+}
+.recovery-card--claim > h2 {
+  margin: 0 0 3px;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+}
+.recovery-claim-stack {
+  display: grid;
+  gap: 13px;
+}
+.recovery-claim-button {
+  width: 100%;
+}
+.recovery-claim-note {
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}

@@ -1,0 +1,121 @@
+/* Oracle price chart — relocated from app/app.css (Step 7, pure move; no declaration edited). */
+
+.oracle-card {
+  overflow: hidden;
+  padding: 18px 22px 14px;
+}
+.oracle-card--unavailable {
+  padding: 0;
+}
+.price-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.price-change--up {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.price-change--down {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+.oracle-chart {
+  width: 100%;
+  min-height: 260px;
+  margin-top: 8px;
+}
+.oracle-level-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 8px 4px 4px;
+  color: var(--color-muted);
+  font-size: 15px;
+}
+.oracle-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.oracle-level i {
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed currentColor;
+}
+.oracle-level--entry {
+  color: var(--color-foreground);
+}
+.oracle-level--floor {
+  color: var(--color-success);
+}
+.oracle-level--call {
+  color: var(--color-danger);
+}
+.oracle-card {
+  min-height: 361px;
+}
+.oracle-card--unavailable {
+  min-height: 0;
+}
+.oracle-card .auction-section-label {
+  text-transform: uppercase;
+}
+.price-change {
+  font-size: 15px;
+}
+.oracle-chart {
+  min-height: 275px;
+  margin-top: 0;
+}
+
+/* Relocated from app/app.css (Step 7 follow-up, pure move; no declaration edited).
+   The `.oracle-card__header` flex line and the `.oracle-card__price-line strong` tabular-nums line
+   originally shared grouped rules with other components; those grouped rules moved verbatim to
+   ui/ui.css. The single-selector oracle rules below are the oracle-only remainder. */
+.oracle-card__header > div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+.oracle-card__price-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.oracle-card__price-line strong {
+  color: var(--color-foreground);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.oracle-card__header small {
+  color: var(--color-subtle);
+  font-size: 15px;
+  line-height: 1.35;
+}
+.oracle-card__header {
+  gap: 12px;
+}
+.oracle-card__header > div:first-child {
+  gap: 4px;
+}
+.oracle-card__price-line {
+  gap: 12px;
+}
+@media (max-width: 1300px) {
+  .oracle-card__header {
+    flex-wrap: wrap;
+  }
+  .oracle-card__header > div:first-child {
+    min-width: 275px;
+  }
+}

@@ -1,0 +1,31 @@
+[profile.default]
+solc_version = '0.8.30'
+evm_version = 'Prague'
+bytecode_hash = 'none'
+cbor_metadata = false
+src = 'src'
+out = 'out'
+test = 'test/foundry'
+script = 'deploy'
+cache_path = 'cache/foundry'
+verbosity = 3
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+build_info = true
+extra_output = ['storageLayout']
+libs = ['node_modules', '../../../blockchain/outbe-chain']
+fs_permissions = [{ access = 'read-write', path = '../../../.local' }]
+remappings = [
+    # Upstream contract sources referenced through the outbe-chain submodule.
+    '@contracts/=../../../blockchain/outbe-chain/contracts/intex/src/',
+    '@precompiles/=../../../blockchain/outbe-chain/contracts/precompiles/src/',
+    # App-owned local mocks. Uses a distinct prefix: a longer `@test-mocks/local/` key listed
+    # before `@test-mocks/` would shadow (drop) the latter in forge 1.7.1's resolver.
+    '@local-mocks/=test/mocks/local/',
+    # Upstream test mocks reused by the local deployment.
+    '@test-mocks/=../../../blockchain/outbe-chain/contracts/intex/test/mocks/',
+    'forge-std/=../../../blockchain/outbe-chain/contracts/intex/node_modules/forge-std/src/',
+    'ds-test/=../../../blockchain/outbe-chain/contracts/intex/node_modules/forge-std/lib/ds-test/src/',
+    '@openzeppelin/=../../../blockchain/outbe-chain/contracts/intex/node_modules/@openzeppelin/',
+]

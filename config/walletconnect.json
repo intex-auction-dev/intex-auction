@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "projectId": "a1258c919aba2bdf1d02e6a48e52dd5c",
+  "metadata": {
+    "name": "Intex Auction",
+    "description": "Bidder application",
+    "url": "http://127.0.0.1:4173",
+    "icons": []
+  }
+}

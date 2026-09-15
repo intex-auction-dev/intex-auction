@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.kiro/
+.vscode/
+.DS_Store
+.playwright-mcp/
+.serena/
+.wrangler/
+.superpowers/
+dist-dev-controls/
+.local/
+bun.lock
+
+--full-page
+--width
+
+playwright-report/
+test-results/
+node_modules
+.release/
+# Playwright right-rail audit output is regenerated on every run.
+docs/test-evidence/right-rail-parity/*/after/

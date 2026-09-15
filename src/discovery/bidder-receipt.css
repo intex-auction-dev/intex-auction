@@ -1,0 +1,310 @@
+.bidder-receipt {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 20px;
+  border: 1px solid var(--color-success-border);
+  border-radius: 14px;
+  background: var(--color-success-soft);
+}
+
+.bidder-receipt--neutral {
+  border-color: var(--color-line);
+  background: var(--color-panel);
+}
+
+.bidder-receipt__glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bidder-receipt__glow i {
+  position: absolute;
+  width: 510px;
+  height: 270px;
+  border-radius: 999px;
+  background: rgba(21, 128, 61, 0.32);
+  filter: blur(64px);
+  opacity: 0.8;
+  top: calc(50% - 135px);
+  left: calc(50% - 255px);
+  animation: orbit-glow 72s linear infinite;
+}
+
+.bidder-receipt__glow i + i {
+  width: 450px;
+  height: 240px;
+  background: rgba(21, 128, 61, 0.32);
+  filter: blur(64px);
+  opacity: 0.8;
+  top: calc(50% - 120px);
+  left: calc(50% - 225px);
+  animation: orbit-glow-offset 72s linear infinite;
+}
+
+@keyframes orbit-glow-offset {
+  0% {
+    transform: rotate(180deg) translateX(360px) rotate(-180deg);
+  }
+  100% {
+    transform: rotate(540deg) translateX(360px) rotate(-540deg);
+  }
+}
+
+@keyframes orbit-glow {
+  0% {
+    transform: rotate(0deg) translateX(360px) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateX(360px) rotate(-360deg);
+  }
+}
+
+.bidder-receipt__content {
+  position: relative;
+  z-index: 1;
+}
+
+.bidder-receipt__header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.bidder-receipt__header > span {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.bidder-receipt--neutral .bidder-receipt__header > span {
+  background: var(--color-faint);
+  color: var(--color-subtle);
+}
+
+.bidder-receipt__header strong {
+  min-width: 0;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.bidder-receipt__primary {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.bidder-receipt-stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.bidder-receipt__original-bid {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-cta);
+  background: var(--color-panel);
+}
+
+.bidder-receipt__original-bid > button {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0;
+  background: var(--color-panel);
+  color: var(--color-foreground);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.bidder-receipt__original-bid > button strong {
+  flex: 1;
+  font-weight: 600;
+}
+
+.bidder-receipt__original-bid > button svg {
+  flex: 0 0 auto;
+  color: var(--color-muted);
+  transition: transform var(--motion-normal) ease;
+}
+
+.bidder-receipt__original-bid > button[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.bidder-receipt__original-bid-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--motion-normal) ease;
+}
+
+.bidder-receipt__original-bid-content--open {
+  grid-template-rows: 1fr;
+}
+
+.bidder-receipt__original-bid-details-wrap {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--motion-normal) ease;
+}
+
+.bidder-receipt__original-bid-content--open .bidder-receipt__original-bid-details-wrap {
+  border-top: 1px solid var(--color-line);
+  opacity: 1;
+}
+
+.bidder-receipt__original-bid-details {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0 16px 16px;
+}
+
+.bidder-receipt__original-bid-details > div {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 0;
+}
+
+.bidder-receipt__original-bid-details > div:not(:last-child) {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.bidder-receipt__original-bid-details dt {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.bidder-receipt__original-bid-details dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.bidder-receipt__original-bid-details dd small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.bidder-receipt__original-bid-summary {
+  margin: -10px 0 14px;
+  color: var(--color-subtle);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.bidder-receipt__primary > span,
+.bidder-receipt__secondary > span,
+.bidder-receipt__details dt {
+  color: var(--color-label-soft);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bidder-receipt__primary > b {
+  color: var(--color-foreground);
+  font-size: 48px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 0.9;
+}
+
+.bidder-receipt__secondary {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.bidder-receipt__secondary > b {
+  color: var(--color-foreground);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.bidder-receipt__primary > small,
+.bidder-receipt__secondary > small,
+.bidder-receipt__details dd small {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.bidder-receipt__primary > small,
+.bidder-receipt__secondary > small {
+  margin-top: 3px;
+}
+
+.bidder-receipt__details {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding-top: 13px;
+  border-top: 1px solid var(--color-success-border);
+}
+
+.bidder-receipt--neutral .bidder-receipt__details {
+  border-top-color: var(--color-line);
+}
+
+.bidder-receipt__details > div {
+  min-width: 0;
+}
+
+.bidder-receipt__details dd {
+  margin: 3px 0 0;
+  color: var(--color-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.bidder-receipt__details dd small {
+  display: block;
+  margin-top: 2px;
+}

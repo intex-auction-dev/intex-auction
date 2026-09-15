@@ -1,0 +1,5 @@
+# Foundry build/deployment artifacts for the app-owned local overlay.
+# Only the Solidity sources, deploy script and foundry.toml are tracked.
+out/
+cache/
+broadcast/

@@ -1,0 +1,208 @@
+.wallet-control {
+  position: relative;
+}
+.app-shell__wallet {
+  min-width: 0;
+  min-height: 35px;
+  height: 35px;
+  padding: 8px 15px;
+  white-space: nowrap;
+}
+.app-shell__wallet--failed {
+  background: var(--color-accent);
+}
+
+.wallet-panel {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 100;
+  width: min(390px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+}
+
+.wallet-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--color-line);
+}
+.wallet-panel__header span {
+  color: var(--color-subtle);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.wallet-panel__header h2 {
+  margin: 4px 0 0;
+  font-size: 19px;
+}
+
+.wallet-provider-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px 20px 20px;
+}
+.wallet-provider-list > .button {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-surface);
+  text-align: left;
+}
+.wallet-provider-list > .button:hover {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+}
+.wallet-provider-list > .button > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.wallet-provider-list strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.wallet-provider-list small {
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.wallet-panel__connected {
+  display: grid;
+  gap: 16px;
+  padding: 16px 20px 20px;
+}
+.wallet-panel__connected dl {
+  margin: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.wallet-panel__connected dl > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--color-line);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.wallet-panel__connected dl > div:last-child {
+  border-bottom: 0;
+}
+.wallet-panel__connected dt {
+  color: var(--color-muted);
+}
+.wallet-panel__connected dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  text-align: right;
+}
+.wallet-panel__networks {
+  display: grid;
+  gap: 8px;
+}
+.wallet-panel__networks > span {
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.unsupported-wallet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.unsupported-wallet-error {
+  margin: 10px 0 0;
+  color: var(--color-danger);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@keyframes network-takeover-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.network-takeover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 128px);
+  animation: network-takeover-in var(--motion-slow) var(--ease-out) both;
+}
+
+.network-takeover__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 420px;
+  text-align: center;
+}
+
+.network-takeover__icon {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.network-takeover__title {
+  margin: 0 0 10px;
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+}
+
+.network-takeover__sub {
+  margin: 0 0 24px;
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.network-takeover__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+@media (max-width: 1320px) {
+  .wallet-panel {
+    right: 16px;
+  }
+}

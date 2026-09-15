@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "directives": {
+    "default-src": [
+      "'self'"
+    ],
+    "base-uri": [
+      "'none'"
+    ],
+    "frame-ancestors": [
+      "'none'"
+    ],
+    "object-src": [
+      "'none'"
+    ],
+    "script-src": [
+      "'self'"
+    ],
+    "style-src": [
+      "'self'",
+      "'unsafe-inline'"
+    ],
+    "img-src": [
+      "'self'",
+      "data:",
+      "blob:"
+    ],
+    "font-src": [
+      "'self'"
+    ],
+    "connect-src": [
+      "'self'",
+      "@configured-rpc-origins",
+      "https://verify.walletconnect.com",
+      "https://verify.walletconnect.org",
+      "wss://relay.walletconnect.org"
+    ],
+    "frame-src": [
+      "https://verify.walletconnect.org"
+    ],
+    "form-action": [
+      "'none'"
+    ]
+  }
+}

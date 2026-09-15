@@ -1,0 +1,85 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      // Pinned read-only protocol submodule. AGENTS.md sets an absolute write boundary on it.
+      "!blockchain/outbe-chain",
+      // Reviewed runtime JSON and contract ABIs, checked by scripts/build/check-contract-profile.mjs.
+      // Reformatting a reviewed artifact would change the audit trail.
+      "!config",
+      // Solidity; Biome does not handle .sol.
+      "!dev/local-chain/blockchain",
+      "!**/dist",
+      "!**/*.min.js",
+      "!package-lock.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "json": { "formatter": { "enabled": true } },
+  "css": {
+    // index.css uses Tailwind v4 at-rules (@theme, @custom-variant) via @tailwindcss/vite.
+    "parser": { "tailwindDirectives": true },
+    "formatter": { "enabled": true }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "useExhaustiveDependencies": {
+          "level": "error",
+          "options": {
+            // The app resets local state on a venue-context transition with effects whose body
+            // captures nothing and whose dependency IS the trigger (props.contextToken, monthKey).
+            // AGENTS.md requires that reset; the rule cannot tell it from a stale closure.
+            // Missing dependencies are still reported, which is the half that finds real bugs.
+            "reportUnnecessaryDependencies": false
+          }
+        }
+      },
+      "style": {
+        // 113 sites, none of them an unvalidated chain-decode or storage-revive boundary: they are
+        // all guards TypeScript cannot narrow through (`selectorMatch[1]!` after a successful match,
+        // `band[i]!` inside a bounded loop, `filter(x => x.day !== null).map(x => x.day!)`).
+        // Biome's suggested `?.` fix widens return types, which this codebase's byte-identical
+        // render guarantee forbids. Tracked as deferred work in docs/src-refactoring-proposal.md.
+        "noNonNullAssertion": "off",
+        // Requires reordering rules by specificity, which changes the cascade. Deferred: it needs
+        // deliberate visual-regression work, not a lint pass. See the proposal document.
+        "noDescendingSpecificity": "off"
+      },
+      "complexity": {
+        // 25 `!important` declarations. Removing one changes rendered output, so this cannot be
+        // fixed inside a behaviour-preserving change. Deferred alongside noDescendingSpecificity.
+        "noImportantStyles": "off"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        // AGENTS.md mandates: external libraries -> tokens/hooks/format -> model/domain -> other
+        // local. Biome cannot express that grouping, and sorting would fight the project's rule.
+        "organizeImports": "off"
+      }
+    }
+  }
+}

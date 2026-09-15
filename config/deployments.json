@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "deployments": [
+    {
+      "id": "outbe-origin-deployment",
+      "roles": [
+        "origin"
+      ],
+      "enabled": false,
+      "chainProfileId": "outbe-origin",
+      "chainId": null,
+      "deploymentBlock": null,
+      "addresses": {
+        "metadosis": null,
+        "desis": null,
+        "originRouter": null,
+        "oracle": null,
+        "intex": null
+      },
+      "abiFiles": {
+        "metadosis": "./abi/IMetadosis.json",
+        "desis": "./abi/IDesis.json",
+        "originRouter": "./abi/OriginRouter.json",
+        "oracle": "./abi/IOracle.json",
+        "intex": "./abi/IIntex.json"
+      },
+      "reviewedSourceCommit": "outbe/outbe-chain@f5477b56c9a4192755354a3f2577603dffe5b3a6"
+    },
+    {
+      "id": "bnb-mainnet-venue-deployment",
+      "roles": [
+        "venue"
+      ],
+      "enabled": false,
+      "chainProfileId": "bnb-mainnet-venue",
+      "chainId": 56,
+      "deploymentBlock": null,
+      "addresses": {
+        "intexAuction": null,
+        "intexAuctionImplementation": null,
+        "escrowAdapter": null,
+        "targetRouter": null,
+        "theCompact": null,
+        "paymentToken": null,
+        "intexNFT1155": null
+      },
+      "adapterProfile": "multi-issuance-usd-reference",
+      "abiFiles": {
+        "intexAuction": "./abi/IntexAuction.json",
+        "escrowAdapter": "./abi/EscrowAdapter.json",
+        "targetRouter": "./abi/TargetRouter.json",
+        "theCompact": "./abi/TheCompact.json",
+        "paymentToken": "./abi/ERC20.json",
+        "intexNFT1155": "./abi/IntexNFT1155.json"
+      },
+      "reviewedSourceCommit": "outbe/outbe-chain@f5477b56c9a4192755354a3f2577603dffe5b3a6"
+    }
+  ]
+}
