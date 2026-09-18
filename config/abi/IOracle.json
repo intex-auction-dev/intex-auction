@@ -738,35 +738,6 @@
   },
   {
     "type": "function",
-    "name": "getUtcDayVwap",
-    "inputs": [
-      {
-        "name": "base",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "quote",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "utcDay",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "vwap",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getVotePenaltyCounter",
     "inputs": [
       {

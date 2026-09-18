@@ -10,8 +10,8 @@ describe('commit view model strike derivation', () => {
         quantity: 3n,
         issuanceCurrency: 'EUR',
         referenceCurrency: 'USD',
-        strikePerIntex: 100_000n * 10n ** 9n,
-        referenceStrikePerIntexMinor: 108_000n * 10n ** 9n,
+        strikePerIntex: 100_000n * 10n ** 6n,
+        referenceStrikePerIntexMinor: 108_000n * 10n ** 6n,
       }),
     ).toEqual({
       perIntexValue: '100,000.00 EUR',
@@ -27,24 +27,25 @@ describe('commit view model strike derivation', () => {
       issuanceCurrency: 'EUR',
       referenceCurrency: 'USD',
       strikePerIntex: null,
-      referenceStrikePerIntexMinor: 108_000n * 10n ** 9n,
+      referenceStrikePerIntexMinor: 108_000n * 10n ** 6n,
     });
     expect(rows.perIntexValue).toBe('108,000.00 USD');
     expect(rows.totalValue).toBe('—');
   });
 
   it('computes the frozen FX rate and null-guards a non-positive reference', () => {
-    expect(strikeFxRate(34n * 10n ** 9n, 1n * 10n ** 9n)).toBe(34n * 10n ** 18n);
+    // Entry prices are at the chain 1e6 scale; the FX rate is a scale-invariant ratio at 1e18.
+    expect(strikeFxRate(34n * 10n ** 6n, 1n * 10n ** 6n)).toBe(34n * 10n ** 18n);
     expect(strikeFxRate(34n, 0n)).toBeNull();
     expect(strikeFxRate(null, 1n)).toBeNull();
   });
 
   it('renders the strike calculation copy without a rounding note when exact', () => {
     const copy = strikeCalculationCopy({
-      strikePerIntex: 1_000n * 10n ** 9n,
-      issuanceEntryPriceMinor: 1n * 10n ** 9n,
-      referenceEntryPriceMinor: 1n * 10n ** 9n,
-      promisLoadMinor: 1_000n * 10n ** 18n,
+      strikePerIntex: 1_000n * 10n ** 6n,
+      issuanceEntryPriceMinor: 1n * 10n ** 6n,
+      referenceEntryPriceMinor: 1n * 10n ** 6n,
+      promisLoadMinor: 1_000n * 10n ** 6n,
       issuanceCurrency: 'USD',
       referenceCurrency: 'USD',
     });

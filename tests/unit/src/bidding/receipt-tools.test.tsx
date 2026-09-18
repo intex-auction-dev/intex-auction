@@ -7,7 +7,7 @@ const model: BidReceiptDetailModel = {
   auctionLabel: 'Auction 2026 08 04',
   seriesCode: 'Assigned at issuance',
   quantity: '10 Intexes',
-  bidRate: '8% of strike · Œ80 / Intex',
+  bidRate: '8% of escrow basis · Œ80 / Intex',
   totalEscrow: 'Œ800 · 28,000 TRY',
   totalPromis: '10,000,000 Promis',
   commitHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
@@ -34,7 +34,7 @@ describe('bid receipt detail', () => {
     expect(markup).toContain('Quantity');
     expect(markup).toContain('10 Intexes');
     expect(markup).toContain('Bid rate');
-    expect(markup).toContain('8% of strike');
+    expect(markup).toContain('8% of escrow basis');
     expect(markup).toContain('Total escrow at reveal');
     expect(markup).toContain('Total Promis');
     expect(markup).toContain('Commit hash');

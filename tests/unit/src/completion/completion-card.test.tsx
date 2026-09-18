@@ -26,7 +26,7 @@ const noSale: AuctionCompletionRead = {
     source: 'normal-finalization',
   },
   clearingRate: 0n,
-  promisLoadMinor: 1_000_000_000_000_000_000n,
+  promisLoadMinor: 1_000_000n,
   issuanceCurrency: 840,
   referenceCurrency: 840,
   issuanceEntryPriceMinor: 1n,
@@ -137,7 +137,7 @@ describe('Phase 10 completion rendering', () => {
     expect(winnerHtml).toContain('Bid won');
     expect(winnerHtml).toContain('Clearing rate');
     expect(winnerHtml).toContain('Promis rights');
-    expect(winnerHtml).toContain('of strike');
+    expect(winnerHtml).toContain('of escrow basis');
     expect(winnerHtml).toContain('Total bid amount');
     expect(winnerHtml).toContain('Refunded');
     expect(winnerHtml).toContain('Net paid');
@@ -210,8 +210,8 @@ describe('Phase 10 completion rendering', () => {
     const loserHtml = renderToStaticMarkup(<AuctionCompletionCard state={{ kind: 'loaded', value: loser }} />);
     expect(loserHtml).toContain('Bid not selected');
     expect(loserHtml).toContain('Bid amount refunded');
-    expect(loserHtml).toContain('of strike');
-    expect(loserHtml).toContain('You bid 70% of strike · cleared at 50% of strike');
+    expect(loserHtml).toContain('of escrow basis');
+    expect(loserHtml).toContain('You bid 70% of escrow basis · cleared at 50% of escrow basis');
     expect(loserHtml).toContain('Intex series');
     expect(loserHtml).toContain('2026-08-04-USD-U');
     expect(loserHtml).not.toContain('0x0000000000000000000000000007');
@@ -238,8 +238,8 @@ describe('Phase 10 completion rendering', () => {
       targetSeriesIds: [sid(7)],
       issuanceCurrency: 949,
       referenceCurrency: 840,
-      issuanceEntryPriceMinor: 34_000_000_000n,
-      entryPriceMinor: 1_000_000_000n,
+      issuanceEntryPriceMinor: 34_000_000n,
+      entryPriceMinor: 1_000_000n,
       bidderEconomics: {
         kind: 'finalized' as const,
         lockedAmount: 5_000_000_000_000_000_000_000n,
@@ -320,7 +320,7 @@ describe('Phase 10 completion rendering', () => {
     const loserHtml = renderToStaticMarkup(<AuctionCompletionCard state={{ kind: 'loaded', value: retriedLoser }} />);
     expect(loserHtml).toContain('Bid not selected');
     expect(loserHtml).toContain('Bid amount refunded');
-    expect(loserHtml).toContain('of strike');
+    expect(loserHtml).toContain('of escrow basis');
   });
 
   it('suppresses the ordinary action widget for cancelled series and keeps skipped venues explicit', () => {

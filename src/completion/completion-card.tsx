@@ -111,7 +111,7 @@ function ResultReceipt({
           <div className="bidder-receipt__primary">
             <span>{won ? 'Clearing rate' : 'Your bid'}</span>
             <b>{won ? clearing : 'Not selected'}</b>
-            <small>{won ? 'of strike' : 'Not selected at clearing'}</small>
+            <small>{won ? 'of escrow basis' : 'Not selected at clearing'}</small>
           </div>
           {won && (
             <div className="bidder-receipt__secondary">
@@ -126,12 +126,12 @@ function ResultReceipt({
             <div className="bidder-receipt__secondary">
               <span>Clearing rate</span>
               <b>{clearing}</b>
-              <small>of strike</small>
+              <small>of escrow basis</small>
             </div>
           )}
           {!won && originalBidRate !== null && (
             <p className="bidder-receipt__original-bid-summary">
-              You bid {originalBidRate} of strike · cleared at {clearing} of strike
+              You bid {originalBidRate} of escrow basis · cleared at {clearing} of escrow basis
             </p>
           )}
           <dl className="bidder-receipt__details">
@@ -209,7 +209,7 @@ function ResultReceipt({
                   <dt>Bid rate</dt>
                   <dd>
                     {originalBid.rate}
-                    <small>of strike</small>
+                    <small>of escrow basis</small>
                   </dd>
                 </div>
                 <div>

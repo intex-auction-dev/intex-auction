@@ -111,7 +111,7 @@ export const baseReceiptDetailModel = (
     auctionLabel: `Auction ${spacedWorldwideDay(material.worldwideDay)}`,
     seriesCode: 'Assigned at issuance',
     quantity: `${material.quantity.toLocaleString('en-GB')} ${intexUnit(material.quantity)}`,
-    bidRate: `${formatContractBidRatePercent(material.bidRate)} of strike`,
+    bidRate: `${formatContractBidRatePercent(material.bidRate)} of escrow basis`,
     totalEscrow: 'Unavailable',
     totalPromis: 'Unavailable',
     commitHash: material.commitHash,
@@ -197,7 +197,7 @@ export const loadBidReceiptDetailModel = async (
       ...base,
       seriesCode,
       quantity: `${material.quantity.toLocaleString('en-GB')} ${intexUnit(material.quantity)}`,
-      bidRate: `${formatContractBidRatePercent(material.bidRate)} of strike · ${formatTokenAmount(perIntexMinor, decimals, symbolValue)} / Intex`,
+      bidRate: `${formatContractBidRatePercent(material.bidRate)} of escrow basis · ${formatTokenAmount(perIntexMinor, decimals, symbolValue)} / Intex`,
       totalEscrow: `${formatTokenAmount(totalEscrowMinor, decimals, symbolValue)}${totalIssuance === null || totalIssuance === 'Conversion unavailable' ? '' : ` · ${totalIssuance}`}`,
       totalPromis: `${formatPromisAmount(quantity * auction.params.promisLoadMinor)} Promis`,
     };

@@ -729,7 +729,10 @@ export function OraclePriceChart({ model, quoteDenomination }: OraclePriceChartP
       </div>
       {model.points.length > 0 ? (
         <>
-          <p className="visually-hidden">COEN price history. {model.retainedCount} points available.</p>
+          <p className="visually-hidden">
+            COEN price history from recorded price snapshots. {model.retainedCount} points available. The plotted line
+            is snapshot prices, not the frozen auction entry price shown by the Entry marker.
+          </p>
           <div ref={containerRef} className="oracle-chart" data-chart-library="uplot" />
         </>
       ) : (

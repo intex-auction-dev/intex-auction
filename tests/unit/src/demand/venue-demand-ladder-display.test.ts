@@ -52,12 +52,12 @@ describe('extracted ladder display domain', () => {
     expect(buildLadderBidDetail(segments[1]!, 500_000)).toEqual([
       { label: 'Your bid', value: null },
       { label: 'Quantity', value: '10 Intexes' },
-      { label: 'Bid rate', value: '50% strike' },
+      { label: 'Bid rate', value: '50% of escrow basis' },
       { label: 'Filled', value: '6 of 10' },
-      { label: 'Clearing rate', value: '50% strike' },
+      { label: 'Clearing rate', value: '50% of escrow basis' },
     ]);
     expect(ladderDetailText(buildLadderBidDetail(segments[0]!, null))).toBe(
-      'Bid 0xbbbb…bbbb · Quantity 10 Intexes · Bid rate 70% strike',
+      'Bid 0xbbbb…bbbb · Quantity 10 Intexes · Bid rate 70% of escrow basis',
     );
   });
 

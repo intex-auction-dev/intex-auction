@@ -58,6 +58,7 @@ export type GlobalTerminalDisposition =
   | 'cleared-sale'
   | 'cleared-no-sale'
   | 'cancelled-red'
+  | 'cancelled-unpriced'
   | 'overdue';
 
 export interface CalendarGlobalAuction {
@@ -167,6 +168,7 @@ interface DesisEventIndex {
   candidates: Set<WorldwideDayKey>;
   skipped: Set<WorldwideDayKey>;
   cancelled: Set<WorldwideDayKey>;
+  cancelledUnpriced: Set<WorldwideDayKey>;
   overdue: Set<WorldwideDayKey>;
   clearing: Map<WorldwideDayKey, ClearingEvidence>;
 }
@@ -350,7 +352,7 @@ const scanDesisEvents = async (
   dayNumbers: readonly number[],
   expected: ReadonlySet<WorldwideDayKey>,
 ): Promise<DesisEventIndex> => {
-  const [created, cancelled, overdue, cleared, clearedEmpty, unused, skipped] = await Promise.all([
+  const [created, cancelled, cancelledUnpriced, overdue, cleared, clearedEmpty, unused, skipped] = await Promise.all([
     scan(
       client,
       profile.addresses.desis,
@@ -367,6 +369,17 @@ const scanDesisEvents = async (
       profile.addresses.desis,
       profile.abis.desis,
       'AuctionCancelledRedDay',
+      profile.deploymentBlock,
+      toBlock,
+      profile.logBatchSize,
+      profile.readRetryCount,
+      { worldwideDay: dayNumbers },
+    ),
+    scan(
+      client,
+      profile.addresses.desis,
+      profile.abis.desis,
+      'AuctionCancelledUnpriced',
       profile.deploymentBlock,
       toBlock,
       profile.logBatchSize,
@@ -430,7 +443,15 @@ const scanDesisEvents = async (
     ),
   ]);
   const candidates = new Set<WorldwideDayKey>();
-  for (const log of [...created, ...cancelled, ...overdue, ...cleared, ...clearedEmpty, ...skipped]) {
+  for (const log of [
+    ...created,
+    ...cancelled,
+    ...cancelledUnpriced,
+    ...overdue,
+    ...cleared,
+    ...clearedEmpty,
+    ...skipped,
+  ]) {
     const day = asWorldwideDayKey(log.args.worldwideDay, 'Desis event worldwideDay');
     if (inRange(day, expected)) candidates.add(day);
   }
@@ -443,6 +464,11 @@ const scanDesisEvents = async (
   for (const log of cancelled) {
     const day = asWorldwideDayKey(log.args.worldwideDay, 'AuctionCancelledRedDay worldwideDay');
     if (inRange(day, expected)) cancelledDays.add(day);
+  }
+  const cancelledUnpricedDays = new Set<WorldwideDayKey>();
+  for (const log of cancelledUnpriced) {
+    const day = asWorldwideDayKey(log.args.worldwideDay, 'AuctionCancelledUnpriced worldwideDay');
+    if (inRange(day, expected)) cancelledUnpricedDays.add(day);
   }
   const overdueDays = new Set<WorldwideDayKey>();
   for (const log of overdue) {
@@ -482,6 +508,7 @@ const scanDesisEvents = async (
     candidates,
     skipped: skippedDays,
     cancelled: cancelledDays,
+    cancelledUnpriced: cancelledUnpricedDays,
     overdue: overdueDays,
     clearing,
   };
@@ -510,7 +537,7 @@ const routerPayloadDay = (payload: Hex, expectedMessageType: number): WorldwideD
   return asWorldwideDayKey(view.getUint32(2, false), 'OriginRouter payload worldwideDay');
 };
 
-const parkedSendTuple = (
+const parkedMessageTuple = (
   value: unknown,
 ): {
   dstChainId: number;
@@ -519,14 +546,14 @@ const parkedSendTuple = (
 } => {
   const raw = Array.isArray(value)
     ? { dstChainId: value[0], sent: value[2], payload: value[3] }
-    : asRecord(value, 'OriginRouter.parkedSend');
+    : asRecord(value, 'OriginRouter.parkedMessage');
   const payload = raw.payload;
   if (typeof payload !== 'string' || !/^0x[0-9a-fA-F]*$/.test(payload)) {
-    throw new TypeError('OriginRouter.parkedSend payload is invalid.');
+    throw new TypeError('OriginRouter.parkedMessage payload is invalid.');
   }
-  if (typeof raw.sent !== 'boolean') throw new TypeError('OriginRouter.parkedSend sent must be boolean.');
+  if (typeof raw.sent !== 'boolean') throw new TypeError('OriginRouter.parkedMessage sent must be boolean.');
   return {
-    dstChainId: asSafeNumber(raw.dstChainId, 'OriginRouter.parkedSend dstChainId'),
+    dstChainId: asSafeNumber(raw.dstChainId, 'OriginRouter.parkedMessage dstChainId'),
     sent: raw.sent,
     payload: payload as Hex,
   };
@@ -540,6 +567,10 @@ const deliveryField = (messageType: number): keyof CalendarOriginDelivery => {
 };
 
 const mergeDelivery = (current: OriginDeliveryState, next: OriginDeliveryState): OriginDeliveryState => {
+  // Ranking encodes DECISION 2: a leg parked or flushed on-chain must always win over a bare
+  // `*Sent` event. Every `_sendOrPark` site emits its `*Sent` unconditionally with sendId==0 on the
+  // parked path (OriginRouter.sol:190,268-398,510), so a surviving `*Sent` can never outrank real
+  // MessageParked evidence into looking dispatched.
   const rank: Record<OriginDeliveryState, number> = {
     'not-observed': 0,
     dispatched: 1,
@@ -557,7 +588,7 @@ const scanRouterEvents = async (
   dayNumbers: readonly number[],
   expected: ReadonlySet<WorldwideDayKey>,
 ): Promise<RouterEventIndex> => {
-  const [stageSent, resultSent, parked, flushed] = await Promise.all([
+  const [stageSent, resultSent, parked, resent] = await Promise.all([
     scan(
       client,
       profile.addresses.originRouter,
@@ -584,7 +615,7 @@ const scanRouterEvents = async (
       client,
       profile.addresses.originRouter,
       profile.abis.originRouter,
-      'SendParked',
+      'MessageParked',
       profile.deploymentBlock,
       toBlock,
       profile.logBatchSize,
@@ -595,7 +626,7 @@ const scanRouterEvents = async (
       client,
       profile.addresses.originRouter,
       profile.abis.originRouter,
-      'PendingSendFlushed',
+      'ParkedMessageResent',
       profile.deploymentBlock,
       toBlock,
       profile.logBatchSize,
@@ -610,39 +641,53 @@ const scanRouterEvents = async (
     const current = delivery.get(day) ?? emptyOriginDelivery();
     delivery.set(day, { ...current, [field]: mergeDelivery(current[field], state) });
   };
-  for (const log of stageSent) {
-    const day = asWorldwideDayKey(log.args.worldwideDay, 'AuctionStageSent worldwideDay');
-    const messageType = asSafeNumber(log.args.stageType, 'AuctionStageSent stageType');
-    if (messageType === 3 || messageType === 4) update(day, deliveryField(messageType), 'dispatched');
-  }
-  for (const log of resultSent) {
-    update(asWorldwideDayKey(log.args.worldwideDay, 'AuctionResultSent worldwideDay'), 'result', 'dispatched');
-  }
 
-  const flushedIndices = new Set(flushed.map((log) => asBigint(log.args.idx, 'PendingSendFlushed idx').toString()));
+  // DECISION 2: classify MessageParked evidence FIRST, so a bare `*Sent` for the same (day, leg) can
+  // only ever fill a leg still 'not-observed' — never overwrite parked/flushed. `parked` here records
+  // exactly which (day, field) legs were parked; a `*Sent` that names one of those is not dispatched.
+  const parkedLegs = new Set<string>();
+  const resentIndices = new Set(resent.map((log) => asBigint(log.args.idx, 'ParkedMessageResent idx').toString()));
   await boundedMap(parked, async (log) => {
-    const index = asBigint(log.args.idx, 'SendParked idx');
-    const messageType = asSafeNumber(log.args.msgType, 'SendParked msgType');
+    const index = asBigint(log.args.idx, 'MessageParked idx');
+    const messageType = asSafeNumber(log.args.msgType, 'MessageParked msgType');
     if (!ROUTER_MESSAGE_TYPES.has(messageType)) return;
     try {
-      const parkedSend = parkedSendTuple(
+      const parkedMessage = parkedMessageTuple(
         await client.readContract({
           address: profile.addresses.originRouter,
           abi: profile.abis.originRouter,
-          functionName: 'parkedSend',
+          functionName: 'parkedMessage',
           args: [index],
         }),
       );
-      if (parkedSend.dstChainId !== venueChainId) {
-        throw new TypeError('OriginRouter parked-send destination disagrees with its event.');
+      if (parkedMessage.dstChainId !== venueChainId) {
+        throw new TypeError('OriginRouter parked-message destination disagrees with its event.');
       }
-      const day = routerPayloadDay(parkedSend.payload, messageType);
-      const state = parkedSend.sent || flushedIndices.has(index.toString()) ? 'flushed' : 'parked';
-      update(day, deliveryField(messageType), state);
+      const day = routerPayloadDay(parkedMessage.payload, messageType);
+      const field = deliveryField(messageType);
+      const state = parkedMessage.sent || resentIndices.has(index.toString()) ? 'flushed' : 'parked';
+      parkedLegs.add(`${day}:${field}`);
+      update(day, field, state);
     } catch (error) {
       failures.push(calendarFailure('origin-router', error));
     }
   });
+
+  const markSent = (day: WorldwideDayKey, field: keyof CalendarOriginDelivery) => {
+    // A `*Sent` event dispatches a leg only when no MessageParked exists for it. sendId is never used
+    // to classify delivery: parked ⇒ sendId==0 is confirmed, the converse is unresolved (bridge-dependent).
+    if (parkedLegs.has(`${day}:${field}`)) return;
+    update(day, field, 'dispatched');
+  };
+  for (const log of stageSent) {
+    const day = asWorldwideDayKey(log.args.worldwideDay, 'AuctionStageSent worldwideDay');
+    const messageType = asSafeNumber(log.args.stageType, 'AuctionStageSent stageType');
+    if (messageType === 3 || messageType === 4) markSent(day, deliveryField(messageType));
+  }
+  for (const log of resultSent) {
+    markSent(asWorldwideDayKey(log.args.worldwideDay, 'AuctionResultSent worldwideDay'), 'result');
+  }
+
   return { delivery, failures };
 };
 
@@ -827,6 +872,10 @@ const globalDisposition = (
   if (clearing?.kind === 'sale') return 'cleared-sale';
   if (clearing?.kind === 'no-sale') return 'cleared-no-sale';
   if (events.cancelled.has(day)) return 'cancelled-red';
+  // An unpriced day is cancelled and dispatched RED on-chain (desis/runtime.rs:475-497), but it was
+  // briefed with a limit so Metadosis still classifies it GREEN — it is NOT a red day. Keep it distinct
+  // from cancelled-red so the UI never claims the day type was red.
+  if (events.cancelledUnpriced.has(day)) return 'cancelled-unpriced';
   if (events.overdue.has(day)) return 'overdue';
   if (stage === 'cleared') return 'cleared';
   if (stage && stage !== 'none') return 'active';
@@ -916,6 +965,7 @@ export const loadCalendarRangeWithReaders = async (
     candidates: new Set(),
     skipped: new Set(),
     cancelled: new Set(),
+    cancelledUnpriced: new Set(),
     overdue: new Set(),
     clearing: new Map(),
   };
@@ -1133,6 +1183,7 @@ export const loadOriginCalendarRangeWithReaders = async (
     candidates: new Set(),
     skipped: new Set(),
     cancelled: new Set(),
+    cancelledUnpriced: new Set(),
     overdue: new Set(),
     clearing: new Map(),
   };
@@ -1277,6 +1328,7 @@ export const applyVenueCalendarOverlay = async (
     candidates: new Set<WorldwideDayKey>(),
     skipped: new Set<WorldwideDayKey>(),
     cancelled: new Set<WorldwideDayKey>(),
+    cancelledUnpriced: new Set<WorldwideDayKey>(),
     overdue: new Set<WorldwideDayKey>(),
     clearing: new Map<WorldwideDayKey, ClearingEvidence>(),
   };

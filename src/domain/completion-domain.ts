@@ -1,7 +1,7 @@
 import { decodeEnumTag } from './enum-tag';
 import { calculateEscrowLockMinor } from './escrow-lock';
 
-export type IntexLifecycle = 'issued' | 'qualified' | 'called';
+export type IntexLifecycle = 'issued' | 'qualified' | 'called' | 'expired';
 export type IntexTokenStatus = 'issued' | 'settled';
 export type TargetAuctionResult = 'awaiting-result' | 'sale' | 'no-sale' | 'cancelled' | 'no-auction';
 export type SeriesProvisioning = 'awaiting-series' | 'provisioned' | 'not-applicable-no-sale';
@@ -44,7 +44,7 @@ export type BidderEconomics =
     };
 
 export const decodeIntexLifecycle = (tag: number): IntexLifecycle =>
-  decodeEnumTag('Intex lifecycle', tag, { 0: 'issued', 1: 'qualified', 2: 'called' });
+  decodeEnumTag('Intex lifecycle', tag, { 0: 'issued', 1: 'qualified', 2: 'called', 3: 'expired' });
 
 export const decodeIntexTokenStatus = (tag: number): IntexTokenStatus =>
   decodeEnumTag('Intex token status', tag, { 0: 'issued', 1: 'settled' });

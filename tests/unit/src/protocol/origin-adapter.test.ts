@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { decodeAbiParameters, encodeAbiParameters, parseAbiParameters } from 'viem';
 import { OutbeAuctionAdapter } from '@/protocol/origin-adapter';
 import {
   DESIS,
@@ -167,7 +168,7 @@ describe('Outbe auction adapter', () => {
             promisLoadMinor: 1_000n,
             entryPriceMinor: 100n,
             floorPriceMinor: 108n,
-            issuedIntexCount: 50,
+            issuedUnits: 50,
             callWindow: 2_592_000n,
             callThreshold: 1_814_400n,
             callPriceMinor: 228n,
@@ -178,7 +179,9 @@ describe('Outbe auction adapter', () => {
             issuanceCurrency: 840,
             referenceCurrency: 840,
             worldwideDay: 20260803,
-            costAmountMinor: 0n,
+            settledUnits: 3,
+            exercisedUnits: 0,
+            gemFactoryUnits: 0,
           },
         ],
       ]),
@@ -268,5 +271,40 @@ describe('Outbe auction adapter', () => {
     await expect(new OutbeAuctionAdapter(client, outbeProfile()).readWorldwideDayState(worldwideDay())).rejects.toThrow(
       'UnexpectedFailure',
     );
+  });
+
+  it('decodes the reshaped 18-field SeriesData tuple with issuedUnits at position 5', () => {
+    // Mirrors config/abi/IIntex.json SeriesData (verbatim from the chain export): 18 fields,
+    // field 5 is issuedUnits, ending worldwideDay, settledUnits, exercisedUnits, gemFactoryUnits.
+    const seriesDataTuple = parseAbiParameters([
+      '(bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits)',
+    ]);
+    const value = {
+      seriesId: `0x${(20260803).toString(16).padStart(28, '0')}` as `0x${string}`,
+      promisLoadMinor: 1_000n,
+      entryPriceMinor: 100n,
+      floorPriceMinor: 108n,
+      issuedUnits: 50,
+      callWindow: 2_592_000,
+      callThreshold: 1_814_400,
+      callPriceMinor: 228n,
+      state: 1,
+      issuedAt: 1_700_000_000,
+      calledAt: 0,
+      callNoticePeriod: 604_800,
+      issuanceCurrency: 840,
+      referenceCurrency: 840,
+      worldwideDay: 20260803,
+      settledUnits: 3,
+      exercisedUnits: 0,
+      gemFactoryUnits: 0,
+    };
+    const encoded = encodeAbiParameters(seriesDataTuple, [value]);
+    const [decoded] = decodeAbiParameters(seriesDataTuple, encoded);
+    // issuedUnits, not the retired costAmountMinor, occupies field 5; settledUnits (a unit count)
+    // is a distinct trailing field and no longer collides with a monetary read.
+    expect(decoded.issuedUnits).toBe(50);
+    expect(decoded.settledUnits).toBe(3);
+    expect('costAmountMinor' in decoded).toBe(false);
   });
 });

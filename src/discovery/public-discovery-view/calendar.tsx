@@ -45,6 +45,12 @@ export const auctionCalendarStatus = (day: CalendarWorldwideDay): { label: strin
   if (day.dayType === 'red' || day.globalAuction.terminalDisposition === 'cancelled-red') {
     return { label: 'Cancelled', tone: 'danger' };
   }
+  // An unpriced day is cancelled on-chain but is NOT a red day (Metadosis still classifies it
+  // green), so it is reported as cancelled without the red-day danger tone — matching
+  // venueStatusPresentation in public-auction-view-presentation.ts so the two surfaces agree.
+  if (day.globalAuction.terminalDisposition === 'cancelled-unpriced') {
+    return { label: 'Cancelled', tone: 'neutral' };
+  }
   if (day.venueStage || day.venueReceipt === 'delivery-pending') {
     const status = venueStatusPresentation(null, day);
     const calendarTone: PresentationTone = status.tone === 'neutral' ? 'success' : status.tone;

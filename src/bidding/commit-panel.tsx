@@ -158,8 +158,8 @@ const strikeCurrencyTip = (issuanceCurrency: string, referenceCurrency: string):
 
 export const commitFormCopy = {
   quantityHint: (minimum: number) => `Min – ${integer(minimum)} ${intexUnit(minimum)}.`,
-  bidRateHint: (minimum: number) => `Percent of Strike amount. Min – ${formatContractBidRatePercent(minimum)}.`,
-  bidRate: (rate: number) => `${formatContractBidRatePercent(rate)} of strike`,
+  bidRateHint: (minimum: number) => `Percent of escrow basis. Min – ${formatContractBidRatePercent(minimum)}.`,
+  bidRate: (rate: number) => `${formatContractBidRatePercent(rate)} of escrow basis`,
   bond: (amount: string) => `Committing locks a refundable ${amount} bond.`,
 } as const;
 

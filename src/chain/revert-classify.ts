@@ -82,3 +82,11 @@ export const isAuctionNotFound = (error: unknown): boolean => {
   const decoded = decodedError(error);
   return decoded?.name === 'AuctionNotFound' || matchesSelector(error, 'AuctionNotFound()');
 };
+
+// Backstop for E1: the pre-commit preflight blocks ineligible wallets before signing, but a
+// registry change racing the mined commit can still revert with NotWhitelisted(address). Naming
+// it here turns that opaque revert into an actionable reason instead of a raw failure.
+export const isNotWhitelisted = (error: unknown): boolean => {
+  const decoded = decodedError(error);
+  return decoded?.name === 'NotWhitelisted' || matchesSelector(error, 'NotWhitelisted(address)');
+};

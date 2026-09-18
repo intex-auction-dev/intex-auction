@@ -460,47 +460,37 @@ export class VenueAuctionAdapter {
     bidder: Address,
   ): Promise<VenueEscrowRecoveryState> {
     await requireCode(this.client, 'Recovery escrow', escrowContract);
-    const [bidderState, [abandonedRaw, unfinalizedRaw, postFinalizeRaw, noSplitRaw, escrowStateRaw]] =
-      await Promise.all([
-        this.readEscrowBidderState(escrowContract, worldwideDay, bidder),
-        Promise.all([
-          this.client.readContract({
-            address: escrowContract,
-            abi: this.profile.abis.escrowAdapter,
-            functionName: 'COMMIT_BOND_ABANDON_DELAY',
-          }),
-          this.client.readContract({
-            address: escrowContract,
-            abi: this.profile.abis.escrowAdapter,
-            functionName: 'UNFINALIZED_REFUND_DELAY',
-          }),
-          this.client.readContract({
-            address: escrowContract,
-            abi: this.profile.abis.escrowAdapter,
-            functionName: 'POST_FINALIZE_REFUND_DELAY',
-          }),
-          this.client.readContract({
-            address: escrowContract,
-            abi: this.profile.abis.escrowAdapter,
-            functionName: 'NO_SPLIT_REFUND_DELAY',
-          }),
-          this.client.readContract({
-            address: escrowContract,
-            abi: this.profile.abis.escrowAdapter,
-            functionName: 'auctionEscrowState',
-            args: [dayNumber(worldwideDay)],
-          }),
-        ]),
-      ]);
+    const [bidderState, [abandonedRaw, unfinalizedRaw, postFinalizeRaw, escrowStateRaw]] = await Promise.all([
+      this.readEscrowBidderState(escrowContract, worldwideDay, bidder),
+      Promise.all([
+        this.client.readContract({
+          address: escrowContract,
+          abi: this.profile.abis.escrowAdapter,
+          functionName: 'COMMIT_BOND_ABANDON_DELAY',
+        }),
+        this.client.readContract({
+          address: escrowContract,
+          abi: this.profile.abis.escrowAdapter,
+          functionName: 'UNFINALIZED_REFUND_DELAY',
+        }),
+        this.client.readContract({
+          address: escrowContract,
+          abi: this.profile.abis.escrowAdapter,
+          functionName: 'POST_FINALIZE_REFUND_DELAY',
+        }),
+        this.client.readContract({
+          address: escrowContract,
+          abi: this.profile.abis.escrowAdapter,
+          functionName: 'auctionEscrowState',
+          args: [dayNumber(worldwideDay)],
+        }),
+      ]),
+    ]);
     const constants: VenueRecoveryContractConstants = {
       abandonedCommitBondDelay: asUint(abandonedRaw, 32, 'COMMIT_BOND_ABANDON_DELAY'),
       unfinalizedRefundDelay: asUint(unfinalizedRaw, 32, 'UNFINALIZED_REFUND_DELAY'),
       postFinalizeRefundDelay: asUint(postFinalizeRaw, 32, 'POST_FINALIZE_REFUND_DELAY'),
-      noSplitRefundDelay: asUint(noSplitRaw, 32, 'NO_SPLIT_REFUND_DELAY'),
     };
-    if (constants.postFinalizeRefundDelay >= constants.noSplitRefundDelay) {
-      throw new RangeError('The reviewed escrow requires NO_SPLIT_REFUND_DELAY to exceed POST_FINALIZE_REFUND_DELAY.');
-    }
     return {
       ...bidderState,
       constants,

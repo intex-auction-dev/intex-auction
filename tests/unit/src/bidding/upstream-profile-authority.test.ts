@@ -10,6 +10,7 @@ const ESCROW = '0x000000000000000000000000000000000000eC01' as Address;
 const TOKEN = '0x0000000000000000000000000000000000007001' as Address;
 const ROUTER = '0x0000000000000000000000000000000000007002' as Address;
 const NFT = '0x0000000000000000000000000000000000007003' as Address;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
 const TX_HASH = `0x${'b'.repeat(64)}` as Hash;
 const ZERO_HASH = `0x${'0'.repeat(64)}` as Hash;
 const parsed = parseWorldwideDayKey('20260804');
@@ -72,6 +73,13 @@ class FakeChain {
     return {
       readContract: async (request: { functionName: string }) => {
         switch (request.functionName) {
+          // commitBid is whitelist-gated via requireWhitelisted(_s().whitelist, msg.sender)
+          // (IntexAuction.sol:298). The pre-commit preflight reads whitelist() first; a ZERO
+          // registry leaves the gate open (Whitelist.sol:16-20 requireWhitelisted), so the
+          // preflight short-circuits and never reads isWhitelisted. Returning the zero address
+          // keeps these tests exercising issuance-currency authority, not whitelist behaviour.
+          case 'whitelist':
+            return ZERO_ADDRESS;
           case 'getAuctionStage':
             return 0;
           case 'getAuctionInfo':

@@ -22,7 +22,6 @@ const constants: RecoveryContractConstants = {
   abandonedCommitBondDelay: 2_592_000n,
   unfinalizedRefundDelay: 259_200n,
   postFinalizeRefundDelay: 259_200n,
-  noSplitRefundDelay: 2_592_000n,
 };
 
 const base = {
@@ -221,18 +220,18 @@ describe('bidder recovery projection', () => {
     ).toMatchObject({ returnedAmount: 0n, burnedAmount: 1_000n, availability: 'claimable' });
   });
 
-  it('blocks finalized-without-split until the exact 30-day fallback boundary', () => {
+  it('blocks finalized-without-split until the exact post-finalize (72-hour) boundary, refunding full principal', () => {
     const state = escrowState({ finalized: true, finalizedAt: 20_000n });
     const waiting = projectEscrowRefundRecovery({
       ...base,
-      latestBlockTimestamp: 2_611_999n,
+      latestBlockTimestamp: 279_199n,
       lock: locked(),
       escrowState: state,
       constants,
     });
     const claimable = projectEscrowRefundRecovery({
       ...base,
-      latestBlockTimestamp: 2_612_000n,
+      latestBlockTimestamp: 279_200n,
       lock: locked(),
       escrowState: state,
       constants,
@@ -240,10 +239,11 @@ describe('bidder recovery projection', () => {
     expect(waiting).toMatchObject({
       path: 'escrow-no-split-refund',
       availability: 'waiting',
+      claimableAt: 279_200n,
       returnedAmount: 1_000n,
       burnedAmount: 0n,
     });
-    expect(claimable).toMatchObject({ availability: 'claimable', claimableAt: 2_612_000n });
+    expect(claimable).toMatchObject({ availability: 'claimable', claimableAt: 279_200n });
   });
 
   it('does not treat aggregate finalization or historical hasLocks as bidder completion', () => {

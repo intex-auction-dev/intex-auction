@@ -44,7 +44,28 @@ import {
 import { bufferedGasLimit } from '../domain/transaction-gas';
 
 const ZERO_HASH = `0x${'0'.repeat(64)}` as Hash;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
 const SUPPORTED_ISSUANCE_CURRENCIES = Object.freeze(Array.from({ length: 999 }, (_, index) => index + 1));
+
+// Only `commitBid` is whitelist-gated on the reviewed IntexAuction profile (single
+// `requireWhitelisted` at IntexAuction.sol:298; revealBid/cancelCommit/claims are not gated),
+// so this preflight must never block reveal or recovery for an already-committed bidder.
+// Shared with the post-submit revert backstop so the pre-check and the race case read identically.
+export const WHITELIST_INELIGIBLE_MESSAGE =
+  'This wallet is not on the auction whitelist and cannot commit a bid. Ask the deployment operator to add it, then reconnect.';
+
+const AUCTION_WHITELIST_ABI = [
+  { type: 'function', name: 'whitelist', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+] as const;
+const IWHITELIST_ABI = [
+  {
+    type: 'function',
+    name: 'isWhitelisted',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'bool' }],
+  },
+] as const;
 
 export class StaleCommitContextError extends Error {}
 export class CommitPreflightError extends Error {}
@@ -108,6 +129,33 @@ const assertStorageAvailable = (storage: ReceiptStorage): void => {
 
 const adapterFor = (publicClient: PublicClient, profile: ResolvedVenueReadProfile): VenueAuctionAdapter =>
   new VenueAuctionAdapter(fromViemPublicClient(publicClient), profile);
+
+// E1 whitelist gate: read the registry the auction points its `commitBid` gate at, then the
+// bidder's membership, BEFORE any EIP-712 signature or approval. A zero registry leaves the gate
+// open by design (Whitelist.sol requireWhitelisted), so it costs zero extra RPC calls.
+// ponytail: point-in-time read — a registry update between this check and mining can still revert
+// with NotWhitelisted; that revert is named by src/chain/revert-classify.ts as the backstop.
+const requireWhitelistEligibility = async (input: {
+  readonly publicClient: PublicClient;
+  readonly auctionProxy: Address;
+  readonly bidder: Address;
+}): Promise<void> => {
+  const registry = (await input.publicClient.readContract({
+    address: input.auctionProxy,
+    abi: AUCTION_WHITELIST_ABI,
+    functionName: 'whitelist',
+  })) as Address;
+  if (registry === ZERO_ADDRESS) return;
+  const eligible = (await input.publicClient.readContract({
+    address: registry,
+    abi: IWHITELIST_ABI,
+    functionName: 'isWhitelisted',
+    args: [input.bidder],
+  })) as boolean;
+  if (!eligible) {
+    throw new CommitPreflightError(WHITELIST_INELIGIBLE_MESSAGE);
+  }
+};
 
 export const readFreshCommitState = async (input: {
   readonly publicClient: PublicClient;
@@ -225,6 +273,14 @@ export const executeCommitTransaction = async (input: {
   const now = input.now ?? (() => new Date().toISOString());
   const adapter = adapterFor(input.publicClient, input.profile);
   assertStorageAvailable(input.storage);
+  contextIsCurrent(input);
+  // E1: gate the wallet before it signs anything. Today an ineligible bidder signs reveal
+  // material and only then hits an unnamed revert; this fails first, before signTypedData.
+  await requireWhitelistEligibility({
+    publicClient: input.publicClient,
+    auctionProxy: input.context.auctionProxy,
+    bidder: input.context.bidder,
+  });
   contextIsCurrent(input);
   const issuanceCurrency = input.issuanceCurrency;
   if (

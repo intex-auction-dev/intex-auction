@@ -984,7 +984,7 @@
   },
   {
     "type": "event",
-    "name": "IssuanceMintDeferred",
+    "name": "IssuanceParked",
     "inputs": [
       {
         "name": "idx",
@@ -1015,7 +1015,7 @@
   },
   {
     "type": "event",
-    "name": "IssuanceMintFlushed",
+    "name": "ParkedIssuanceApplied",
     "inputs": [
       {
         "name": "idx",

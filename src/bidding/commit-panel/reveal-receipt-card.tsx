@@ -252,7 +252,7 @@ export function RevealReceiptCard({
       icon={revealed ? Check : ShieldCheck}
       primaryLabel="Bid rate"
       primaryValue={formatContractBidRatePercent(evidence.receipt.contractBidRate)}
-      primaryDetail="of strike"
+      primaryDetail="of escrow basis"
       details={details}
     />
   );
@@ -340,7 +340,10 @@ export function RevealReceiptCard({
               value: `${integer(evidence.receipt.quantity)} ${intexUnit(evidence.receipt.quantity)}`,
               detail: `${formatPromisAmount(quantity * evidence.fresh.params.promisLoadMinor)} Promis`,
             },
-            { label: 'Bid rate', value: `${formatContractBidRatePercent(evidence.receipt.contractBidRate)} of strike` },
+            {
+              label: 'Bid rate',
+              value: `${formatContractBidRatePercent(evidence.receipt.contractBidRate)} of escrow basis`,
+            },
             {
               label: 'Bid amount per Intex',
               value: paymentAmount(perIntexLock),

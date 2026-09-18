@@ -48,7 +48,7 @@ const fixedPointToChartNumber = (value: bigint, scale: bigint, decimals: number)
 
 export const oracleRateToChartNumber = (value: bigint): number => fixedPointToChartNumber(value, ORACLE_RATE_SCALE, 18);
 
-export const priceToChartNumber = (value: bigint): number => fixedPointToChartNumber(value, PRICE_SCALE, 9);
+export const priceToChartNumber = (value: bigint): number => fixedPointToChartNumber(value, PRICE_SCALE, 6);
 
 const compatibleLevels = (venue: VenueAuctionSnapshot | null): readonly OracleChartLevel[] => {
   if (!venue || venue.params.referenceCurrency !== USD_REFERENCE_CURRENCY) {

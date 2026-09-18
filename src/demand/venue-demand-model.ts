@@ -252,11 +252,11 @@ export const buildLadderBidDetail = (segment: DisplaySegment, clearingRate: numb
   const rows: LadderDetailRow[] = [
     { label: segment.mine ? 'Your bid' : `Bid ${shortenPublicAddress(bidder)}`, value: null },
     { label: 'Quantity', value: `${quantity} ${intexUnit(quantity)}` },
-    { label: 'Bid rate', value: `${formatExactPercent(bidRate)} strike` },
+    { label: 'Bid rate', value: `${formatExactPercent(bidRate)} of escrow basis` },
   ];
   if (clearingRate === null || segment.won === null) return rows;
   rows.push({ label: 'Filled', value: `${segment.won} of ${quantity}` });
-  rows.push({ label: 'Clearing rate', value: `${formatExactPercent(clearingRate)} strike` });
+  rows.push({ label: 'Clearing rate', value: `${formatExactPercent(clearingRate)} of escrow basis` });
   return rows;
 };
 

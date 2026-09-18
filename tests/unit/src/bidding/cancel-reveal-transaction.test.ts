@@ -23,7 +23,14 @@ import {
   type BidderActionWalletClient,
 } from '@/bidding/cancel-reveal-transaction';
 
+// The chain converts the six-decimal escrow result into native-18 WCOEN by multiplying by
+// NATIVE_UNITS_PER_PROTOCOL_UNIT (IntexAuction.sol:39, :403-405). Fixtures below are pinned to
+// this native scale so balances/allowances/bonds/locks exercise the same situations as before the
+// escrow-lock correction. Kept as a literal to avoid importing production constants into fixtures.
+const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n; // 1e12
+
 const ESCROW = '0x000000000000000000000000000000000000eC01' as Address;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
 const TOKEN = '0x0000000000000000000000000000000000007001' as Address;
 const ZERO_HASH = `0x${'0'.repeat(64)}` as Hash;
 const APPROVAL_HASH = `0x${'a'.repeat(64)}` as Hash;
@@ -122,9 +129,9 @@ class Phase8Chain {
   constructor(options: FakeOptions = {}) {
     this.options = options;
     this.stage = options.stage ?? 0;
-    this.bond = options.bond ?? 10n;
-    this.allowance = options.allowance ?? 1_000n;
-    this.balance = options.balance ?? 1_000n;
+    this.bond = options.bond ?? 10n * NATIVE_UNITS_PER_PROTOCOL_UNIT;
+    this.allowance = options.allowance ?? 1_000n * NATIVE_UNITS_PER_PROTOCOL_UNIT;
+    this.balance = options.balance ?? 1_000n * NATIVE_UNITS_PER_PROTOCOL_UNIT;
   }
 
   client(): PublicClient {
@@ -166,6 +173,11 @@ class Phase8Chain {
             return 18;
           case 'symbol':
             return 'WCOEN';
+          case 'whitelist':
+            // Commit/recommit path reads the auction's whitelist registry before signing. A zero
+            // registry leaves the gate open by design (Whitelist.sol requireWhitelisted), which is
+            // the situation these fixtures exercise. Not related to the escrow-lock scale.
+            return ZERO_ADDRESS;
           default:
             throw new Error(`Unexpected read ${request.functionName}`);
         }
@@ -305,7 +317,8 @@ class Phase8Chain {
           this.pendingReveal = {
             quantity,
             bidRate,
-            lockAmount: (BigInt(quantity) * 100n * BigInt(bidRate)) / 1_000_000n,
+            // Mirror IntexAuction.revealBid exactly: six-decimal escrow result, then *1e12 to native-18.
+            lockAmount: ((BigInt(quantity) * 100n * BigInt(bidRate)) / 1_000_000n) * NATIVE_UNITS_PER_PROTOCOL_UNIT,
           };
         }
         return ACTION_HASH;
@@ -555,7 +568,13 @@ describe('Phase 8 bidder transaction boundaries', () => {
   });
 
   it('uses the bond in effective balance but approves the exact full reveal lock', async () => {
-    const chain = new Phase8Chain({ stage: 1, bond: 50n, balance: 50n, allowance: 0n });
+    // bond + balance exactly cover the native-18 lock; allowance starts at zero.
+    const chain = new Phase8Chain({
+      stage: 1,
+      bond: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      balance: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      allowance: 0n,
+    });
     const { storage, material } = await setup();
     chain.liveCommit = material.commitHash;
     const result = await executeRevealBidTransaction({
@@ -568,19 +587,31 @@ describe('Phase 8 bidder transaction boundaries', () => {
     });
     expect(result).toMatchObject({
       reconciliation: 'confirmed',
-      fullLockAmount: 100n,
-      effectiveBalance: 100n,
-      liveBondContribution: 50n,
+      fullLockAmount: 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      effectiveBalance: 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      liveBondContribution: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
     });
-    expect(chain.writes[0]).toMatchObject({ functionName: 'approve', args: [getAddress(ESCROW), 100n] });
+    // A1 regression guard: the approval must be the EXACT native-18 lock (six-decimal escrow result
+    // * 1e12). This assertion fails if the 1e12 NATIVE_UNITS_PER_PROTOCOL_UNIT factor is ever dropped
+    // from calculateEscrowLockMinor, because the approve arg would collapse back to 100n.
+    expect(chain.writes[0]).toMatchObject({
+      functionName: 'approve',
+      args: [getAddress(ESCROW), 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT],
+    });
+    expect(chain.writes[0]?.args?.[1]).toBe(100_000_000_000_000n);
     expect(chain.writes[1]?.functionName).toBe('revealBid');
     expect(chain.revealed).toBe(true);
     expect(chain.liveCommit).toBe(ZERO_HASH);
-    expect(chain.lock).toMatchObject({ lockedAmount: 100n, status: 1 });
+    expect(chain.lock).toMatchObject({ lockedAmount: 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT, status: 1 });
   });
 
   it('reuses exact approval and reveal requests for simulation, estimation and submission', async () => {
-    const chain = new Phase8Chain({ stage: 1, bond: 50n, balance: 50n, allowance: 0n });
+    const chain = new Phase8Chain({
+      stage: 1,
+      bond: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      balance: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      allowance: 0n,
+    });
     const { storage, material } = await setup();
     chain.liveCommit = material.commitHash;
     const client = chain.client();
@@ -623,7 +654,13 @@ describe('Phase 8 bidder transaction boundaries', () => {
   });
 
   it('requires full-lock allowance even when the bond funds the entire reveal balance', async () => {
-    const chain = new Phase8Chain({ stage: 1, bond: 100n, balance: 0n, allowance: 0n });
+    // The bond alone covers the whole native-18 lock, yet the approval must still be the full lock.
+    const chain = new Phase8Chain({
+      stage: 1,
+      bond: 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+      balance: 0n,
+      allowance: 0n,
+    });
     const { storage, material } = await setup();
     chain.liveCommit = material.commitHash;
     await executeRevealBidTransaction({
@@ -634,7 +671,7 @@ describe('Phase 8 bidder transaction boundaries', () => {
       storage,
       isContextCurrent: () => true,
     });
-    expect(chain.writes[0]?.args).toEqual([getAddress(ESCROW), 100n]);
+    expect(chain.writes[0]?.args).toEqual([getAddress(ESCROW), 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT]);
   });
 
   it('rejects insufficient effective balance before any wallet call', async () => {

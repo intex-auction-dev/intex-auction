@@ -87,7 +87,7 @@ export function VenueDemandLadder({ state }: { state: VenueLadderViewState }) {
       ? 'Live revealed demand'
       : model.stage === 'issuance'
         ? 'Clearing in progress · final allocation pending'
-        : 'public record · sorted by % of strike';
+        : 'public record · sorted by % of escrow basis';
   const cumulativeQuantity = model.rows.at(-1)?.cumulativeQuantity ?? 0;
   const finalOutcome = model.authoritativeClearingRate !== null ? outcome : undefined;
   const summary = finalOutcome
