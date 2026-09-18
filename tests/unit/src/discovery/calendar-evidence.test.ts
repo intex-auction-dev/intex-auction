@@ -983,4 +983,62 @@ describe('Phase 4 calendar evidence', () => {
     expect(cell?.globalAuction.terminalDisposition).not.toBe('cancelled-red');
     expect(cell?.dayType).toBe('green');
   });
+
+  it('ranks a re-flushed leg above the earlier parked evidence for the same result leg (mergeDelivery rank)', async () => {
+    // Two MessageParked logs for the SAME (day, result) leg: idx 1 parked (sent=false), idx 2 flushed
+    // (sent=true). No `*Sent` is present, so the markSent short-circuit plays no part — only the
+    // mergeDelivery rank decides. flushed must outrank parked; if that ordering is inverted or dropped
+    // the merged result silently regresses to 'parked' and a bidder is told a flushed leg is still parked.
+    const reflushed = wwd('20260804');
+    const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
+
+    const originLogs = new Map<string, readonly unknown[]>([
+      ['AuctionCreated', [log({ worldwideDay: Number(reflushed) })]],
+      [
+        'MessageParked',
+        [
+          log({ idx: 1n, dstChainId: 31337, msgType: 5 }, TX_A, 50),
+          log({ idx: 2n, dstChainId: 31337, msgType: 5 }, TX_B, 51),
+        ],
+      ],
+    ]);
+    const originClient = new LogClient(
+      originLogs,
+      new Map([
+        ['1', { dstChainId: 31337, gasLimit: 1n, sent: false, payload: resultPayload(reflushed) }],
+        ['2', { dstChainId: 31337, gasLimit: 1n, sent: true, payload: resultPayload(reflushed) }],
+      ]),
+    );
+    const venueClient = new LogClient(new Map());
+
+    const readers: CalendarRangeReaders = {
+      originClient,
+      venueClient,
+      originAdapter: {
+        validateDeployment: async () => undefined,
+        readRetainedWorldwideDays: async () => [reflushed],
+        readWorldwideDay: async (day) =>
+          day === reflushed
+            ? snapshot(day, 'completed', 'green')
+            : Promise.reject(new OriginWorldwideDayNotFoundError('missing')),
+        readWorldwideDayState: async () => {
+          throw new Error('not used');
+        },
+        readTerminalEvidence: async () => null,
+        readGlobalAuction: async () => globalSnapshot({ stage: 'started' }),
+        readCanonicalSeries: async () => null,
+      },
+      venueAdapter: {
+        validateDeployment: async () => undefined,
+        readAuction: async () => {
+          throw new VenueAuctionNotFoundError('missing');
+        },
+      },
+    };
+
+    const result = await loadCalendarRangeWithReaders(originProfile(), venueProfile(), readers, days);
+    const cell = result.days.find((day) => day.worldwideDay === reflushed);
+    expect(cell?.originDelivery.result).toBe('flushed');
+    expect(cell?.originDelivery.result).not.toBe('parked');
+  });
 });

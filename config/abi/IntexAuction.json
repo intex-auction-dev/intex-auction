@@ -1699,6 +1699,17 @@
   },
   {
     "type": "error",
+    "name": "NotWhitelisted",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "ReentrancyGuardReentrantCall",
     "inputs": []
   },

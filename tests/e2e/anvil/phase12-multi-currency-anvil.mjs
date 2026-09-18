@@ -48,8 +48,8 @@ const controllerAbi = parseAbi([
   'function recordGlobalClearing(uint32 worldwideDay,uint32 issuedIntexCount,uint32 clearingRate,uint64 totalDemand,uint256 unusedPromis,bool reportUnused)',
   'function postAuctionResult(uint32 dstChainId,uint32 worldwideDay,uint32 issuedIntexCount,uint64 auctionClearingRate,uint32 wonBidsCount)',
   'function postRefundInstructions(uint32 dstChainId,uint32 worldwideDay,uint16 chunkIndex,uint16 totalChunks,address[] bidderAddresses,uint128[] refundedAmounts,uint128[] paidAmounts)',
-  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedIntexCount,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
-  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor) data)',
+  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedAt,uint32 issuedUnits,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
+  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits) data)',
   'function currencies(uint256 index) view returns (uint16)',
   'function bidsCount() view returns (uint256)',
   'function getBidsCount(uint32 worldwideDay) view returns (uint32)',
@@ -257,7 +257,7 @@ const issue = async (seriesId, issuanceCurrency, recipient) => {
     promisLoadMinor: auction.params.promisLoadMinor,
     entryPriceMinor: row.entryPriceMinor,
     floorPriceMinor: row.floorPriceMinor,
-    issuedIntexCount: 1,
+    issuedUnits: 1,
     callWindow: auction.params.callTrigger.callWindow,
     callThreshold: auction.params.callTrigger.callThreshold,
     callPriceMinor: row.callPriceMinor,
@@ -268,7 +268,9 @@ const issue = async (seriesId, issuanceCurrency, recipient) => {
     issuanceCurrency,
     referenceCurrency: REFERENCE_CURRENCY,
     worldwideDay: day,
-    costAmountMinor: 0n,
+    settledUnits: 0,
+    exercisedUnits: 0,
+    gemFactoryUnits: 0,
   };
   await write(operator, deployment.controller, controllerAbi, 'setSeries', [series]);
   await write(operator, deployment.controller, controllerAbi, 'postIssuanceInstructions', [
@@ -277,7 +279,8 @@ const issue = async (seriesId, issuanceCurrency, recipient) => {
       {
         seriesId,
         worldwideDay: day,
-        issuedIntexCount: 1,
+        issuedAt,
+        issuedUnits: 1,
         promisLoadMinor: auction.params.promisLoadMinor,
         entryPriceMinor: row.entryPriceMinor,
         floorPriceMinor: row.floorPriceMinor,
@@ -318,13 +321,13 @@ const [daySeries, tryData, eurData, tryBalances, eurBalances] = await Promise.al
   publicClient.readContract({
     address: deployment.intexNFT1155,
     abi: nftAbi,
-    functionName: 'holderBalances',
+    functionName: 'ownerBalances',
     args: [TRY_SERIES, bidderAccount.address],
   }),
   publicClient.readContract({
     address: deployment.intexNFT1155,
     abi: nftAbi,
-    functionName: 'holderBalances',
+    functionName: 'ownerBalances',
     args: [EUR_SERIES, backgroundBidderAccount.address],
   }),
 ]);

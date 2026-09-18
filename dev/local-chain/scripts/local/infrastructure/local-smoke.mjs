@@ -253,8 +253,7 @@ check(
   'deterministic Oracle fixture mismatch',
 );
 check(
-  (await read(deployment.controller, oracleAbi, 'getCoenExchangeRateFor', [840])) > 0n &&
-    (await read(deployment.controller, oracleAbi, 'getCurrencyRate', [840])) > 0n,
+  (await read(deployment.controller, oracleAbi, 'getCoenExchangeRateFor', [840])) > 0n,
   'deterministic Oracle currency-rate mismatch',
 );
 const worldwideDay = await read(deployment.controller, metadosisAbi, 'getWorldwideDay', [YESTERDAY_WORLDWIDE_DAY]);

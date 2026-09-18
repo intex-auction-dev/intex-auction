@@ -135,9 +135,10 @@ export const scheduleTime = (value: bigint): string => {
  *    shape (`oracle-price-chart.test.tsx`, "keeps unchanged digit positions stable").
  *
  *  - `fixedPointRoundedTo2` rounds half-up to exactly two decimals and groups the whole part:
- *    `formatPriceMinor9(1e9)` → `'1.00'`, `formatPriceMinor9(1e18)` → `'1,000,000,000.00'`,
- *    `formatOracleRate18(1e9)` → `'0.00'`. Pinned by
- *    `tests/unit/src/auction/multi-currency-evidence.test.ts` ("pins the auction price scale to 1e9").
+ *    `formatPriceMinor9(1e6)` → `'1.00'`, `formatPriceMinor9(1e18)` → `'1,000,000,000,000.00'`,
+ *    `formatOracleRate18(1e6)` → `'0.00'`. Pinned by
+ *    `tests/unit/src/oracle/multi-currency-evidence.test.ts` ("pins the auction price scale to 1e6,
+ *    distinct from the 1e18 Oracle rate scale").
  *
  * A single function cannot return both `'1.5'` and `'1.50'`/`'0.00'` for equivalent inputs, so the
  * "one rounding rule" the proposal asked for is expressed as one documented core with two named,

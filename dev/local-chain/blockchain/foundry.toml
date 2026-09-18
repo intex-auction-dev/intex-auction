@@ -20,6 +20,8 @@ remappings = [
     # Upstream contract sources referenced through the outbe-chain submodule.
     '@contracts/=../../../blockchain/outbe-chain/contracts/intex/src/',
     '@precompiles/=../../../blockchain/outbe-chain/contracts/precompiles/src/',
+    # Shared upstream contracts (e.g. Whitelist), mirroring upstream `@shared/=../shared/src/`.
+    '@shared/=../../../blockchain/outbe-chain/contracts/shared/src/',
     # App-owned local mocks. Uses a distinct prefix: a longer `@test-mocks/local/` key listed
     # before `@test-mocks/` would shadow (drop) the latter in forge 1.7.1's resolver.
     '@local-mocks/=test/mocks/local/',

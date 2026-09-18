@@ -32,7 +32,7 @@ contract LocalProtocolController {
         uint256 promisLoadMinor;
         uint256 entryPriceMinor;
         uint256 floorPriceMinor;
-        uint32 issuedIntexCount;
+        uint32 issuedUnits;
         uint32 callWindow;
         uint32 callThreshold;
         uint256 callPriceMinor;
@@ -43,7 +43,9 @@ contract LocalProtocolController {
         uint16 issuanceCurrency;
         uint16 referenceCurrency;
         uint32 worldwideDay;
-        uint256 costAmountMinor;
+        uint32 settledUnits;
+        uint32 exercisedUnits;
+        uint32 gemFactoryUnits;
     }
 
     struct TerminalReceipt {
@@ -174,7 +176,7 @@ contract LocalProtocolController {
     event ChainBidsDone(uint32 indexed worldwideDay, uint32 indexed srcChainId, uint32 bidsCount);
     event ChainSkipped(uint32 indexed worldwideDay, uint32 indexed srcChainId);
     event AuctionCancelledRedDay(uint32 indexed worldwideDay);
-    event AuctionCleared(uint32 indexed worldwideDay, uint32 issuedIntexCount, uint32 clearingRate, uint64 totalDemand);
+    event AuctionCleared(uint32 indexed worldwideDay, uint32 issuedUnits, uint32 clearingRate, uint64 totalDemand);
     event AuctionClearedEmpty(uint32 indexed worldwideDay, uint64 totalDemand);
     event UnusedSupplyReported(uint32 indexed worldwideDay, uint256 unusedPromis);
 
@@ -600,13 +602,6 @@ contract LocalProtocolController {
         return getExchangeRate(COEN, token);
     }
 
-    function getCurrencyRate(uint16 isoCode) external view returns (uint256 rate) {
-        _requireOracleAvailable();
-        OracleCurrencyFixture memory fixture = _oracleCurrencies[isoCode];
-        if (!fixture.exists) revert UnknownCurrency(isoCode);
-        rate = fixture.currencyRate;
-    }
-
     function getReferenceCurrencies() external view returns (uint16[] memory isoCodes) {
         _requireOracleAvailable();
         isoCodes = _referenceIsoCodes;
@@ -805,7 +800,9 @@ contract LocalProtocolController {
     }
 
     function startClearing(uint32 worldwideDay) external onlyOperator {
-        originRouter.sendAuctionStageClearing(worldwideDay);
+        // Upstream sendAuctionStageClearing(worldwideDay, dstChainId, gasLimit). The single-chain local
+        // harness clears to its own chain; gasLimit 0 lets the router floor to its clearing budget.
+        originRouter.sendAuctionStageClearing(worldwideDay, uint32(block.chainid), 0);
         _auctionStages[worldwideDay] = IDesis.AuctionStage.Clearing;
         emit AuctionClearingStarted(worldwideDay);
     }
@@ -839,14 +836,22 @@ contract LocalProtocolController {
         uint32 dstChainId,
         IOriginRouter.IssuanceInstructionsParams[] calldata series
     ) external onlyOperator {
-        originRouter.sendIssuanceInstructions(dstChainId, series);
+        // Upstream sendIssuanceInstructions(dstChainId, worldwideDay, chunkIndex, totalChunks, series).
+        // The local harness sends one whole day in a single chunk; worldwideDay is carried by each param.
+        originRouter.sendIssuanceInstructions(dstChainId, series[0].worldwideDay, 0, 1, series);
     }
 
     function markQualified(bytes14 seriesId, uint32 worldwideDay) external onlyOperator {
-        originRouter.sendMarkQualified(seriesId, worldwideDay);
+        // Upstream sendMarkQualified(worldwideDay, bytes14[] seriesIds) broadcasts one day's series.
+        bytes14[] memory seriesIds = new bytes14[](1);
+        seriesIds[0] = seriesId;
+        originRouter.sendMarkQualified(worldwideDay, seriesIds);
     }
 
     function markCalled(bytes14 seriesId, uint32 worldwideDay) external onlyOperator {
-        originRouter.sendMarkCalled(seriesId, worldwideDay);
+        // Upstream sendMarkCalled(worldwideDay, calledAt, bytes14[] seriesIds); calledAt is the origin stamp.
+        bytes14[] memory seriesIds = new bytes14[](1);
+        seriesIds[0] = seriesId;
+        originRouter.sendMarkCalled(worldwideDay, uint32(block.timestamp), seriesIds);
     }
 }

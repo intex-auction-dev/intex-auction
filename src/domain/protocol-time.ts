@@ -1,12 +1,10 @@
 declare const worldwideDayBrand: unique symbol;
 declare const utcTimestampBrand: unique symbol;
 declare const durationSecondsBrand: unique symbol;
-declare const utcAccountingDayBrand: unique symbol;
 
 export type WorldwideDayKey = string & { readonly [worldwideDayBrand]: true };
 export type UtcTimestamp = bigint & { readonly [utcTimestampBrand]: true };
 export type DurationSeconds = bigint & { readonly [durationSecondsBrand]: true };
-export type UtcAccountingDay = number & { readonly [utcAccountingDayBrand]: true };
 
 export interface WorldwideDayComponents {
   year: number;
@@ -186,15 +184,3 @@ export const toUtcTimestamp = (value: bigint): UtcTimestamp => requireUint64(val
 
 export const toDurationSeconds = (value: bigint): DurationSeconds =>
   requireUint64(value, 'Duration') as DurationSeconds;
-
-export const toUtcAccountingDay = (value: number): UtcAccountingDay => {
-  if (!Number.isSafeInteger(value)) {
-    throw new RangeError('UTC accounting day must be a safe integer.');
-  }
-
-  const raw = value.toString().padStart(8, '0');
-  if (!WORLDWIDE_DAY_PATTERN.test(raw) || !isCalendarDate(raw)) {
-    throw new RangeError('UTC accounting day must be a valid YYYYMMDD date.');
-  }
-  return value as UtcAccountingDay;
-};

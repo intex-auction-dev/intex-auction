@@ -104,10 +104,10 @@ const controllerAbi = parseAbi([
   'function recordGlobalClearing(uint32 worldwideDay,uint32 issuedIntexCount,uint32 clearingRate,uint64 totalDemand,uint256 unusedPromis,bool reportUnused)',
   'function postAuctionResult(uint32 dstChainId,uint32 worldwideDay,uint32 issuedIntexCount,uint64 auctionClearingRate,uint32 wonBidsCount)',
   'function postRefundInstructions(uint32 dstChainId,uint32 worldwideDay,uint16 chunkIndex,uint16 totalChunks,address[] bidderAddresses,uint128[] refundedAmounts,uint128[] paidAmounts)',
-  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedIntexCount,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
-  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor) data)',
+  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedAt,uint32 issuedUnits,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
+  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits) data)',
   'function seriesExists(bytes14 seriesId) view returns (bool)',
-  'function seriesData(bytes14 seriesId) view returns ((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor))',
+  'function seriesData(bytes14 seriesId) view returns ((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits))',
   'function markQualified(bytes14 seriesId,uint32 worldwideDay)',
   'function markCalled(bytes14 seriesId,uint32 worldwideDay)',
   'function setOracleFixture(address base,address quote,uint16 isoCode,uint256 rate,uint256 vwap,uint64 timestamp)',
@@ -117,7 +117,6 @@ const controllerAbi = parseAbi([
   'function getReferenceCurrencies() view returns (uint16[] isoCodes)',
   'function getExchangeRateData(address base,address quote) view returns (uint256 rate,uint64 lastBlock,uint64 lastTimestamp)',
   'function getCoenExchangeRateFor(uint16 isoCode) view returns (uint256 rate)',
-  'function getCurrencyRate(uint16 isoCode) view returns (uint256 rate)',
 ]);
 const localTokenAbi = parseAbi([
   'function mint(address to,uint256 amount)',
@@ -131,7 +130,6 @@ const escrowClaimAbi = parseAbi([
   'function COMMIT_BOND_ABANDON_DELAY() view returns (uint32)',
   'function UNFINALIZED_REFUND_DELAY() view returns (uint32)',
   'function POST_FINALIZE_REFUND_DELAY() view returns (uint32)',
-  'function NO_SPLIT_REFUND_DELAY() view returns (uint32)',
   'function claimAbandonedCommitBond(uint32 worldwideDay,address bidder)',
   'function claimRefund(uint32 worldwideDay,address bidder)',
 ]);
@@ -401,7 +399,7 @@ const setCanonicalSeries = async (day, auction, issued, issuanceCurrency, state 
       promisLoadMinor: auction.params.promisLoadMinor,
       entryPriceMinor: row.entryPriceMinor,
       floorPriceMinor: row.floorPriceMinor,
-      issuedIntexCount: issued,
+      issuedUnits: issued,
       callWindow: auction.params.callTrigger.callWindow,
       callThreshold: auction.params.callTrigger.callThreshold,
       callPriceMinor: row.callPriceMinor,
@@ -412,7 +410,9 @@ const setCanonicalSeries = async (day, auction, issued, issuanceCurrency, state 
       issuanceCurrency,
       referenceCurrency: referenceCurrency(auction),
       worldwideDay: day,
-      costAmountMinor: 0n,
+      settledUnits: 0,
+      exercisedUnits: 0,
+      gemFactoryUnits: 0,
     },
   ]);
 };
@@ -512,7 +512,8 @@ const completeSale = async (day, supply = 24) => {
         {
           seriesId: seriesIdBytes14(day),
           worldwideDay: day,
-          issuedIntexCount: issued,
+          issuedAt: Number(auction.schedule.revealEnd),
+          issuedUnits: issued,
           promisLoadMinor: auction.params.promisLoadMinor,
           entryPriceMinor: row.entryPriceMinor,
           floorPriceMinor: row.floorPriceMinor,
@@ -752,14 +753,27 @@ const status = async () => {
         }),
       [],
     ),
-    safe(() =>
-      publicClient.readContract({
+    safe(async () => {
+      // getOwnedSeriesWithBalancesPaginated was removed upstream with no successor. Read the
+      // tester's issued balance per series of the day via ownerBalances(seriesId, owner).
+      const daySeries = await publicClient.readContract({
         address: deployment.intexNFT1155,
         abi: nftAbi,
-        functionName: 'getOwnedSeriesWithBalancesPaginated',
-        args: [TESTER_WALLET_ADDRESS, 0n, 100n],
-      }),
-    ),
+        functionName: 'seriesIdsByWorldwideDay',
+        args: [day],
+      });
+      const balances = await Promise.all(
+        daySeries.map((seriesId) =>
+          publicClient.readContract({
+            address: deployment.intexNFT1155,
+            abi: nftAbi,
+            functionName: 'ownerBalances',
+            args: [seriesId, TESTER_WALLET_ADDRESS],
+          }),
+        ),
+      );
+      return [daySeries, balances];
+    }),
     safe(
       () =>
         publicClient.readContract({
@@ -801,36 +815,30 @@ const status = async () => {
       }),
     ),
   ]);
-  const [unrevealedBondDelay, abandonedBondDelay, unfinalizedRefundDelay, postFinalizeRefundDelay, noSplitRefundDelay] =
-    auction
-      ? await Promise.all([
-          publicClient.readContract({
-            address: deployment.intexAuction,
-            abi: bondAbi,
-            functionName: 'UNREVEALED_BOND_LOCK_PERIOD',
-          }),
-          publicClient.readContract({
-            address: deployment.escrowAdapter,
-            abi: escrowClaimAbi,
-            functionName: 'COMMIT_BOND_ABANDON_DELAY',
-          }),
-          publicClient.readContract({
-            address: deployment.escrowAdapter,
-            abi: escrowClaimAbi,
-            functionName: 'UNFINALIZED_REFUND_DELAY',
-          }),
-          publicClient.readContract({
-            address: deployment.escrowAdapter,
-            abi: escrowClaimAbi,
-            functionName: 'POST_FINALIZE_REFUND_DELAY',
-          }),
-          publicClient.readContract({
-            address: deployment.escrowAdapter,
-            abi: escrowClaimAbi,
-            functionName: 'NO_SPLIT_REFUND_DELAY',
-          }),
-        ])
-      : [0n, 0n, 0n, 0n, 0n];
+  const [unrevealedBondDelay, abandonedBondDelay, unfinalizedRefundDelay, postFinalizeRefundDelay] = auction
+    ? await Promise.all([
+        publicClient.readContract({
+          address: deployment.intexAuction,
+          abi: bondAbi,
+          functionName: 'UNREVEALED_BOND_LOCK_PERIOD',
+        }),
+        publicClient.readContract({
+          address: deployment.escrowAdapter,
+          abi: escrowClaimAbi,
+          functionName: 'COMMIT_BOND_ABANDON_DELAY',
+        }),
+        publicClient.readContract({
+          address: deployment.escrowAdapter,
+          abi: escrowClaimAbi,
+          functionName: 'UNFINALIZED_REFUND_DELAY',
+        }),
+        publicClient.readContract({
+          address: deployment.escrowAdapter,
+          abi: escrowClaimAbi,
+          functionName: 'POST_FINALIZE_REFUND_DELAY',
+        }),
+      ])
+    : [0n, 0n, 0n, 0n];
   const recoveryTimes = deriveRecoveryTimes({
     auction,
     bond,
@@ -841,7 +849,6 @@ const status = async () => {
     abandonedBondDelay,
     unfinalizedRefundDelay,
     postFinalizeRefundDelay,
-    noSplitRefundDelay,
   });
   const canonicalSeries = await safe(async () => {
     const seriesId = seriesIdBytes14(day);
@@ -1006,18 +1013,13 @@ try {
       abi: escrowClaimAbi,
       functionName: 'POST_FINALIZE_REFUND_DELAY',
     });
-    const noSplitDelay = await publicClient.readContract({
-      address: deployment.escrowAdapter,
-      abi: escrowClaimAbi,
-      functionName: 'NO_SPLIT_REFUND_DELAY',
-    });
     let targetTime;
     if (!escrowState.finalized) {
       targetTime = Number(lock.lockedAt) + Number(unfinalizedDelay);
-    } else if (lock.splitRecorded) {
-      targetTime = Number(escrowState.finalizedAt) + Number(postFinalizeDelay);
     } else {
-      targetTime = Number(escrowState.finalizedAt) + Number(noSplitDelay);
+      // Post-finalize claimRefund gates both the split-recorded and no-split cases on
+      // finalizedAt + POST_FINALIZE_REFUND_DELAY (EscrowAdapter.claimRefund).
+      targetTime = Number(escrowState.finalizedAt) + Number(postFinalizeDelay);
     }
     await mineAt(targetTime);
   }

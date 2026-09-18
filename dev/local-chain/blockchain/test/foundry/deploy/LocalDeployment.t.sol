@@ -50,7 +50,7 @@ contract LocalDeploymentTest is Test {
         assertEq(currentVwap, 995_000);
         assertEq(controller.getDayVwap(controller.COEN(), _quote(840)), 995_000);
         assertEq(controller.getExchangeRate(controller.COEN(), _quote(840)), 1_000_000);
-        assertEq(controller.getCurrencyRate(840), 1_000_000);
+        assertEq(controller.getCoenExchangeRateFor(840), 1_000_000);
         assertTrue(controller.supportsInterface(type(IDesis).interfaceId));
     }
 
@@ -91,9 +91,9 @@ contract LocalDeploymentTest is Test {
 
     function test_LocalControllerScopesOracleHistoryByPair() public {
         LocalProtocolController controller = new LocalProtocolController(address(this));
-        uint64 now = uint64(block.timestamp);
-        controller.setOracleFixture(controller.COEN(), _quote(840), 840, 1_050_000, 1_050_000, now);
-        controller.setOracleFixture(controller.COEN(), _quote(949), 949, 15_750_000, 15_750_000, now);
+        uint64 nowTs = uint64(block.timestamp);
+        controller.setOracleFixture(controller.COEN(), _quote(840), 840, 1_050_000, 1_050_000, nowTs);
+        controller.setOracleFixture(controller.COEN(), _quote(949), 949, 15_750_000, 15_750_000, nowTs);
 
         (uint64[] memory usdTimestamps, uint256[] memory usdRates, ) =
             controller.getPriceSnapshotHistory(controller.COEN(), _quote(840), 10);
@@ -185,7 +185,7 @@ contract LocalDeploymentTest is Test {
         escrow.wire(address(auction), address(compact), address(wcoen));
         escrow.setProceedsRecipient(address(target));
         auction.wire(address(escrow));
-        target.wire(address(auction), address(nft), address(escrow), address(nftBridge));
+        target.wire(address(auction), address(nft), address(escrow));
         origin.setProceedsRoute(address(tokenBridge), address(wcoen));
         target.setProceedsRoute(address(tokenBridge), address(origin));
 

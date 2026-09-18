@@ -172,7 +172,7 @@ const [stage, lock, balances, info] = await Promise.all([
   publicClient.readContract({
     address: deployment.intexNFT1155,
     abi: nftAbi,
-    functionName: 'holderBalances',
+    functionName: 'ownerBalances',
     args: [`0x${day.toString(16).padStart(28, '0')}`, tester.address],
   }),
   publicClient.readContract({

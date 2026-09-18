@@ -10,7 +10,6 @@ import {
   parseWorldwideDayKey,
   shiftWorldwideDay,
   toDurationSeconds,
-  toUtcAccountingDay,
   toUtcTimestamp,
   worldwideDayComponents,
   worldwideDayMonth,
@@ -36,11 +35,6 @@ describe('protocol time domains', () => {
     expect(toDurationSeconds((1n << 64n) - 1n)).toBe((1n << 64n) - 1n);
     expect(() => toUtcTimestamp(-1n)).toThrow('must fit uint64');
     expect(() => toDurationSeconds(1n << 64n)).toThrow('must fit uint64');
-  });
-
-  it('keeps Oracle accounting days separate at runtime validation boundaries', () => {
-    expect(toUtcAccountingDay(20260803)).toBe(20260803);
-    expect(() => toUtcAccountingDay(20260229)).toThrow('valid YYYYMMDD');
   });
 
   it('moves across month, year and leap-year boundaries with UTC arithmetic', () => {

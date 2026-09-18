@@ -89,7 +89,7 @@ contract LocalLoopbackTest is Test {
         origin.addTarget(local);
         origin.setProceedsRoute(address(tokenBridge), address(wcoen));
 
-        target.wire(address(auction), address(intex), address(escrow), address(nftBridge));
+        target.wire(address(auction), address(intex), address(escrow));
         target.setProceedsRoute(address(tokenBridge), address(origin));
 
         auction.wire(address(escrow));
@@ -172,7 +172,7 @@ contract LocalLoopbackTest is Test {
 
         controller.postAuctionResult(local, DAY, 50, 700_000, 2);
         IIntexAuction.AuctionResult memory result = auction.getAuctionInfo(DAY).result;
-        assertEq(result.issuedIntexCount, 50, "issued");
+        assertEq(result.issuedUnits, 50, "issued");
         assertEq(result.auctionClearingRate, 700_000, "clearing rate");
 
         address[] memory bidders = new address[](2);
@@ -207,7 +207,8 @@ contract LocalLoopbackTest is Test {
         issuance[0] = IOriginRouter.IssuanceInstructionsParams({
             seriesId: CreateSeriesLib.seriesId(DAY),
             worldwideDay: DAY,
-            issuedIntexCount: 50,
+            issuedAt: uint32(block.timestamp),
+            issuedUnits: 50,
             promisLoadMinor: PROMIS_LOAD_MINOR,
             entryPriceMinor: 1e13,
             floorPriceMinor: 100,
@@ -225,10 +226,10 @@ contract LocalLoopbackTest is Test {
         assertEq(intex.balanceOf(iba1, tokenId), 30, "iba1 mint");
         assertEq(intex.balanceOf(iba2, tokenId), 20, "iba2 mint");
 
-        assertEq(target.nextPendingBidsRelayIdx(), 0, "bids relay parked");
-        (,, bool proceedsParked,) = target.pendingProceedsRoutes(0);
-        assertFalse(proceedsParked, "proceeds route parked");
-        assertEq(target.nextPendingIssuanceMintIdx(), 0, "issuance mint parked");
-        assertEq(origin.parkedSend(0).payload.length, 0, "origin leg parked");
+        (uint16 bidsNextBatch,,) = target.bidsRelay(DAY);
+        assertEq(bidsNextBatch, 0, "bids relay parked");
+        assertEq(target.parkedProceedsCount(), 0, "proceeds route parked");
+        assertEq(target.parkedIssuanceCount(), 0, "issuance mint parked");
+        assertEq(origin.parkedMessage(0).payload.length, 0, "origin leg parked");
     }
 }
