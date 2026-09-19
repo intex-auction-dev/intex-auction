@@ -46,15 +46,19 @@ const TARGET_REVEAL = 1;
 const TARGET_ISSUANCE = 2;
 const TARGET_COMPLETED = 3;
 const TARGET_CANCELLED = 4;
-// Local COEN and promisLoadMinor values use 1e18; published auction prices use 1e9.
-const PROMIS_SCALE = 1_000_000_000_000_000_000n;
-const PRICE_SCALE = 1_000_000_000n;
+// Chain scales: `promisLoadMinor` is PROMIS-units per Intex unit (1e6) and published auction
+// prices are ISO stable-units (1e6) -- see IIntexNFT1155.SeriesData and crates/core/intex schema.
+// The escrow lock derived from this basis is native-18 WCOEN via NATIVE_UNITS_PER_PROTOCOL_UNIT.
+const PROMIS_SCALE = 1_000_000n;
+const PRICE_SCALE = 1_000_000n;
 const UINT64_MAX = 18_446_744_073_709_551_615n;
 const PROMIS_LOAD = 100_000n * PROMIS_SCALE;
 const MIN_BID_RATE = 50_000;
 const BID_RATE = 80_000;
 const COMMIT_BOND = 100_000_000n * 10n ** 18n;
 const RATE_SCALE = 1_000_000n;
+// IntexAuction.sol:39 -- the escrow lock is native-18 WCOEN derived from the 1e6 protocol basis.
+const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n;
 const DAY_SECONDS = 86_400;
 const UTC14_OFFSET_SECONDS = 14 * 3_600;
 const INTEX_CALL_PERIOD_SECONDS = 7 * DAY_SECONDS;
@@ -208,7 +212,7 @@ const originReadAbi = parseAbi([
   'function targetsOf(uint32 worldwideDay) view returns (uint32[])',
 ]);
 const targetExtraAbi = parseAbi([
-  'function pendingBidsRelays(uint256 idx) view returns (uint32 worldwideDay,bool exists,bool done)',
+  'function bidsRelay(uint32 worldwideDay) view returns (uint16 nextBatch,uint16 totalBatches,bool done)',
   'function nextPendingBidsRelayIdx() view returns (uint256)',
 ]);
 const erc20Abi = parseAbi([
@@ -775,7 +779,8 @@ const makeBidMaterialFor = async (
     bidRate,
     signature,
     commitHash: keccak256(signature),
-    lockAmount: (BigInt(quantity) * PROMIS_LOAD * BigInt(bidRate)) / RATE_SCALE,
+    // IntexAuction.sol:403-405 -- divide by RATE_SCALE before the native-units multiply.
+    lockAmount: ((BigInt(quantity) * PROMIS_LOAD * BigInt(bidRate)) / RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT,
     worldwideDay,
   };
 };
@@ -1461,13 +1466,19 @@ const prepareVenueChainSkipped = async (seededAt) => {
   await publicClient.waitForTransactionReceipt({ hash: fundHash, pollingInterval: 100 });
   await tx(operatorWallet, deployment.controller, controllerAbi, 'startClearing', [WORLDWIDE_DAY]);
   assert((await readTargetStage()) === TARGET_ISSUANCE, 'Target did not receive clearing stage.');
+  // Upstream replaced the idx-keyed `pendingBidsRelays` with the per-day
+  // `bidsRelay(worldwideDay) -> (nextBatch, totalBatches, done)` (TargetRouter.sol:123), whose
+  // `done` flag is the completion marker (TargetInbound.sol:112-121). `totalBatches` stays 0 when
+  // the relay round reverts before recording any batch, which is exactly this parked case, so
+  // incompleteness is `!done`. The TARGET_ISSUANCE assertion above already proves the clearing
+  // stage was delivered and the relay therefore attempted.
   const pending = await publicClient.readContract({
     address: deployment.targetRouter,
     abi: targetExtraAbi,
-    functionName: 'pendingBidsRelays',
-    args: [0n],
+    functionName: 'bidsRelay',
+    args: [WORLDWIDE_DAY],
   });
-  assert(Number(pending[0]) === WORLDWIDE_DAY && pending[1] && !pending[2], 'Local bids relay was not parked.');
+  assert(!pending[2], 'Local bids relay was not parked.');
   assert(
     (await publicClient.readContract({
       address: deployment.controller,

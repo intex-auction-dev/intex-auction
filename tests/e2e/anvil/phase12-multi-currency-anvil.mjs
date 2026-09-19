@@ -15,6 +15,9 @@ import { readJson } from '../../../dev/local-chain/scripts/local/infrastructure/
 import { rpc } from '../../../dev/local-chain/scripts/local/infrastructure/rpc.mjs';
 
 const RATE_SCALE = 1_000_000n;
+// IntexAuction.sol:39,403-405 -- the escrow lock is native-18 WCOEN from the 1e6 protocol basis,
+// and the divide by RATE_SCALE precedes the native-units multiply.
+const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n;
 const TRY = 949;
 const EUR = 978;
 // The auction's `prices` array is ReferenceCurrencyPrice[]: "one row per currency the day can
@@ -42,6 +45,10 @@ const escrowAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/Escr
 const nftAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/IntexNFT1155.json'), 'utf8'));
 const oracleAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/IOracle.json'), 'utf8'));
 const tokenAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/ERC20.json'), 'utf8'));
+const targetRouterAbi = parseAbi([
+  'function bidsRelay(uint32 worldwideDay) view returns (uint16 nextBatch,uint16 totalBatches,bool done)',
+  'function relayBids(uint32 worldwideDay)',
+]);
 const controllerAbi = parseAbi([
   'function setGlobalAuctionStage(uint32 worldwideDay,uint8 stage)',
   'function startClearing(uint32 worldwideDay)',
@@ -140,7 +147,9 @@ for (const [wallet, bid] of [
   [tryWallet, tryBid],
   [eurWallet, eurBid],
 ]) {
-  const lock = (BigInt(bid.quantity) * auction.params.promisLoadMinor * BigInt(bid.bidRate)) / RATE_SCALE;
+  const lock =
+    ((BigInt(bid.quantity) * auction.params.promisLoadMinor * BigInt(bid.bidRate)) / RATE_SCALE) *
+    NATIVE_UNITS_PER_PROTOCOL_UNIT;
   await write(wallet, deployment.wcoen, tokenAbi, 'approve', [
     deployment.escrowAdapter,
     auction.params.commitBondMinor + lock,
@@ -167,6 +176,20 @@ for (const [wallet, bid] of [
 
 await mineAt(Number(auction.schedule.revealEnd) + 1);
 await write(operator, deployment.controller, controllerAbi, 'startClearing', [day]);
+// Upstream now carries the bids relay only as far as the CLEARING delivery's gas float allows and
+// exposes `relayBids(worldwideDay)` as a permissionless push for a relay that ran dry
+// (TargetRouter.sol:263). The single-chain local harness has no keeper, so drive it here until the
+// day reports done; without this the relay never leaves batch 0 and no bids reach Outbe.
+for (let round = 0; round < 8; round += 1) {
+  const relay = await publicClient.readContract({
+    address: deployment.targetRouter,
+    abi: targetRouterAbi,
+    functionName: 'bidsRelay',
+    args: [day],
+  });
+  if (relay[2]) break;
+  await write(operator, deployment.targetRouter, targetRouterAbi, 'relayBids', [day]);
+}
 // bidsCount() is the mock controller's cumulative `bidders.length` across every relay, so it
 // also counts the bids the seeded scenario created. Assert the per-day counter instead, and read
 // this day's currencies off the tail of the cumulative arrays.
@@ -231,7 +254,8 @@ const eurLock = await publicClient.readContract({
   functionName: 'getBidLock',
   args: [day, backgroundBidderAccount.address],
 });
-const paidPerWinner = (auction.params.promisLoadMinor * BigInt(clearingRate)) / RATE_SCALE;
+const paidPerWinner =
+  ((auction.params.promisLoadMinor * BigInt(clearingRate)) / RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT;
 await write(operator, deployment.controller, controllerAbi, 'postRefundInstructions', [
   CHAIN_ID,
   day,

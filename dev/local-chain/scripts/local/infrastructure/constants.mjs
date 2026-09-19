@@ -22,6 +22,10 @@ export const RPC_HOST = rpcHostText;
 
 export const ROOT = resolve(here, '../../../../..');
 export const CONTRACT_ROOT = resolve(ROOT, 'dev/local-chain/blockchain');
+// The app-owned Foundry overlay config. forge runs with `--root ROOT` (the repo root) so the
+// out-of-submodule upstream sources resolve as in-project paths (see foundry.toml header); the
+// config itself stays in the overlay and is selected via FOUNDRY_CONFIG.
+export const FOUNDRY_CONFIG_PATH = resolve(CONTRACT_ROOT, 'foundry.toml');
 export const OUTBE_INTEX_ROOT = resolve(ROOT, 'blockchain/outbe-chain/contracts/intex');
 export const LOCAL_ROOT = resolve(ROOT, '.local');
 export const LOCAL_CONFIG_ROOT = resolve(LOCAL_ROOT, 'config');

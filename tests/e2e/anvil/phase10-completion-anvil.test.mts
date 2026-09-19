@@ -139,7 +139,11 @@ const issuanceParams = (input: {
     {
       seriesId: sid(input.worldwideDay),
       worldwideDay: input.worldwideDay,
-      issuedIntexCount: input.auction.result.issuedIntexCount,
+      // Upstream IssuanceInstructionsParams gained `issuedAt` and renamed the count to
+      // `issuedUnits` (IOriginRouter.sol:182). The app-side decoded property keeps its
+      // `issuedIntexCount` name by design (name-only drift at an unchanged position/type).
+      issuedAt: Number(input.auction.schedule.revealEnd),
+      issuedUnits: input.auction.result.issuedIntexCount,
       promisLoadMinor: input.auction.params.promisLoadMinor,
       entryPriceMinor: first.entryPriceMinor,
       floorPriceMinor: first.floorPriceMinor,

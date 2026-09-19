@@ -270,6 +270,9 @@ const SEED_BIDDER_INDEX_BASE = 10;
 const SEED_POOL_SIZE = 200;
 const SEED_NATIVE_BALANCE = 10n * 10n ** 18n;
 const SEED_RATE_SCALE = 1_000_000n;
+// IntexAuction.sol:403-405 -- qty * basis * rate / SCALE_1E6 * NATIVE_UNITS_PER_PROTOCOL_UNIT.
+// The divide precedes the multiply: (x / 1e6) * 1e12 != (x * 1e12) / 1e6 when x % 1e6 != 0.
+const SEED_NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n;
 const seedAccount = (index) => mnemonicToAccount(MNEMONIC, { addressIndex: SEED_BIDDER_INDEX_BASE + index });
 const seedWallet = (index) => createWalletClient({ account: seedAccount(index), transport: http(RPC_URL) });
 const seedHash = (index) => BigInt(keccak256(encodeAbiParameters([{ type: 'uint256' }], [BigInt(index)])));
@@ -303,7 +306,9 @@ const seedBidMaterial = async (index, day, auction) => {
     primaryType: 'RevealBid',
     message: { worldwideDay: day, bidder: account.address, quantity, bidRate, issuanceCurrency, referenceCurrency },
   });
-  const lockAmount = (BigInt(quantity) * auction.params.promisLoadMinor * BigInt(bidRate)) / SEED_RATE_SCALE;
+  const lockAmount =
+    ((BigInt(quantity) * auction.params.promisLoadMinor * BigInt(bidRate)) / SEED_RATE_SCALE) *
+    SEED_NATIVE_UNITS_PER_PROTOCOL_UNIT;
   return {
     account,
     signature,
@@ -488,7 +493,9 @@ const completeSale = async (day, supply = 24) => {
       functionName: 'getBidLock',
       args: [day, row.bidder],
     });
-    const paidAmount = (BigInt(row.won) * auction.params.promisLoadMinor * BigInt(clearingRate)) / SEED_RATE_SCALE;
+    const paidAmount =
+      ((BigInt(row.won) * auction.params.promisLoadMinor * BigInt(clearingRate)) / SEED_RATE_SCALE) *
+      SEED_NATIVE_UNITS_PER_PROTOCOL_UNIT;
     paid.push(paidAmount);
     refunded.push(lock.lockedAmount - paidAmount);
   }
