@@ -131,7 +131,10 @@ const signature = await tester.signTypedData({
   primaryType: 'RevealBid',
   message: { worldwideDay: day, bidder: tester.address, quantity, bidRate, issuanceCurrency: 949, referenceCurrency },
 });
-const lockAmount = (BigInt(quantity) * auction.params.promisLoadMinor * BigInt(bidRate)) / 1_000_000n;
+// IntexAuction.sol:39,403-405 -- the lock is native-18 WCOEN from the 1e6 basis, and the divide
+// by the rate scale precedes the native-units multiply.
+const lockAmount =
+  ((BigInt(quantity) * auction.params.promisLoadMinor * BigInt(bidRate)) / 1_000_000n) * 1_000_000_000_000n;
 await write(deployment.wcoen, tokenAbi, 'approve', [
   deployment.escrowAdapter,
   auction.params.commitBondMinor + lockAmount,
