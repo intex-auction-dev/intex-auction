@@ -1501,17 +1501,6 @@
   },
   {
     "type": "error",
-    "name": "NotFinalizedYet",
-    "inputs": [
-      {
-        "name": "worldwideDay",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "error",
     "name": "NotInitializing",
     "inputs": []
   },
@@ -1563,22 +1552,6 @@
     "inputs": [
       {
         "name": "token",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "SplitNotRecorded",
-    "inputs": [
-      {
-        "name": "worldwideDay",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "bidder",
         "type": "address",
         "internalType": "address"
       }

@@ -349,35 +349,6 @@
   },
   {
     "type": "function",
-    "name": "pendingBidsRelays",
-    "inputs": [
-      {
-        "name": "idx",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "worldwideDay",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "exists",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "done",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "pendingHoldersRelays",
     "inputs": [
       {

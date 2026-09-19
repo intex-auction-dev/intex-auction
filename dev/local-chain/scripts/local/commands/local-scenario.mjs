@@ -18,6 +18,7 @@ import {
   bidderAccount,
   CHAIN_ID,
   DEPLOYMENT_PATH,
+  escrowLockNative,
   LOCAL_CONFIG_ROOT,
   MNEMONIC,
   operatorAccount,
@@ -57,8 +58,6 @@ const MIN_BID_RATE = 50_000;
 const BID_RATE = 80_000;
 const COMMIT_BOND = 100_000_000n * 10n ** 18n;
 const RATE_SCALE = 1_000_000n;
-// IntexAuction.sol:39 -- the escrow lock is native-18 WCOEN derived from the 1e6 protocol basis.
-const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n;
 const DAY_SECONDS = 86_400;
 const UTC14_OFFSET_SECONDS = 14 * 3_600;
 const INTEX_CALL_PERIOD_SECONDS = 7 * DAY_SECONDS;
@@ -73,8 +72,10 @@ const oracleQuoteToken = (isoCode) =>
     ).slice(26)}`,
   );
 const ENTRY_PRICE = PRICE_SCALE;
-const FLOOR_PRICE = 1_080_000_000n;
-const CALL_PRICE = 2_280_000_000n;
+// Floor is +8% and call is +128% of the entry unit price. Derived from PRICE_SCALE so a future
+// scale correction cannot leave these behind (they were missed when PRICE_SCALE moved 1e9 -> 1e6).
+const FLOOR_PRICE = (PRICE_SCALE * 108n) / 100n;
+const CALL_PRICE = (PRICE_SCALE * 228n) / 100n;
 const ORACLE_HISTORY_DAYS = 90;
 // Keep fixture density low; seed baseline history if sub-hour data becomes necessary.
 const ORACLE_INTRADAY_POINTS = 5;
@@ -780,7 +781,7 @@ const makeBidMaterialFor = async (
     signature,
     commitHash: keccak256(signature),
     // IntexAuction.sol:403-405 -- divide by RATE_SCALE before the native-units multiply.
-    lockAmount: ((BigInt(quantity) * PROMIS_LOAD * BigInt(bidRate)) / RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT,
+    lockAmount: escrowLockNative(quantity, PROMIS_LOAD, bidRate),
     worldwideDay,
   };
 };

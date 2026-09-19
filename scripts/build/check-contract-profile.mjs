@@ -154,22 +154,35 @@ for (const signature of [
     `config/abi/IntexNFT1155.json lacks function ${signature}`,
   );
 }
-// Removed upstream: reintroducing any of these means the bundled ABI has drifted back
-// behind the pinned chain and a read would revert on an unknown selector.
-for (const forbidden of [
-  'expireSeries',
-  'SeriesExpired',
-  'SeriesExpiredProgress',
-  'holderBalances',
-  'getAuctionWonCount',
-  'getOwnedSeriesWithBalancesPaginated',
-  'getIssuedHoldersWithBalances',
-]) {
-  assert.equal(
-    nftAbi.some((item) => item.name === forbidden),
-    false,
-    `config/abi/IntexNFT1155.json still exposes obsolete ${forbidden}`,
-  );
+// Removed upstream at the pinned commit: reintroducing any of these means the bundled ABI has
+// drifted back behind the chain and a call would revert on an unknown selector.
+const forbiddenByAbi = {
+  'config/abi/IntexNFT1155.json': [
+    'expireSeries',
+    'SeriesExpired',
+    'SeriesExpiredProgress',
+    'holderBalances',
+    'getAuctionWonCount',
+    'getOwnedSeriesWithBalances',
+    'getOwnedSeriesWithBalancesPaginated',
+    'getIssuedHoldersWithBalances',
+    'SYSTEM_RELAYER_ROLE',
+  ],
+  'config/abi/EscrowAdapter.json': ['NO_SPLIT_REFUND_DELAY', 'BidderRetried', 'SplitNotRecorded', 'NotFinalizedYet'],
+  'config/abi/IOracle.json': ['getCurrencyRate'],
+  'config/abi/TargetRouter.json': ['pendingBidsRelays', 'IssuanceMintDeferred', 'IssuanceMintFlushed'],
+  'config/abi/OriginRouter.json': ['parkedSend', 'SendParked', 'PendingSendFlushed'],
+};
+
+for (const [abiPath, forbidden] of Object.entries(forbiddenByAbi)) {
+  const abi = await readAbi(abiPath);
+  for (const name of forbidden) {
+    assert.equal(
+      abi.some((item) => item.name === name),
+      false,
+      `${abiPath} still exposes obsolete ${name}`,
+    );
+  }
 }
 
 console.log('Reviewed contract ABI profile matches required source selectors and events.');

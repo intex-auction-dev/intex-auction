@@ -6,6 +6,7 @@ import {
   bidderAccount,
   CHAIN_ID,
   DEPLOYMENT_PATH,
+  escrowLockNative,
   LOCAL_CONFIG_ROOT,
   operatorAccount,
   RPC_URL,
@@ -15,9 +16,6 @@ import { readJson } from '../../../dev/local-chain/scripts/local/infrastructure/
 import { rpc } from '../../../dev/local-chain/scripts/local/infrastructure/rpc.mjs';
 
 const RATE_SCALE = 1_000_000n;
-// IntexAuction.sol:39,403-405 -- the escrow lock is native-18 WCOEN from the 1e6 protocol basis,
-// and the divide by RATE_SCALE precedes the native-units multiply.
-const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n;
 const TRY = 949;
 const EUR = 978;
 // The auction's `prices` array is ReferenceCurrencyPrice[]: "one row per currency the day can
@@ -147,9 +145,7 @@ for (const [wallet, bid] of [
   [tryWallet, tryBid],
   [eurWallet, eurBid],
 ]) {
-  const lock =
-    ((BigInt(bid.quantity) * auction.params.promisLoadMinor * BigInt(bid.bidRate)) / RATE_SCALE) *
-    NATIVE_UNITS_PER_PROTOCOL_UNIT;
+  const lock = escrowLockNative(bid.quantity, auction.params.promisLoadMinor, bid.bidRate);
   await write(wallet, deployment.wcoen, tokenAbi, 'approve', [
     deployment.escrowAdapter,
     auction.params.commitBondMinor + lock,
@@ -254,8 +250,7 @@ const eurLock = await publicClient.readContract({
   functionName: 'getBidLock',
   args: [day, backgroundBidderAccount.address],
 });
-const paidPerWinner =
-  ((auction.params.promisLoadMinor * BigInt(clearingRate)) / RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT;
+const paidPerWinner = escrowLockNative(1, auction.params.promisLoadMinor, clearingRate);
 await write(operator, deployment.controller, controllerAbi, 'postRefundInstructions', [
   CHAIN_ID,
   day,
