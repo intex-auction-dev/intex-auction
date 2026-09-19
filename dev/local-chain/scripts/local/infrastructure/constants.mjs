@@ -22,9 +22,6 @@ export const RPC_HOST = rpcHostText;
 
 export const ROOT = resolve(here, '../../../../..');
 export const CONTRACT_ROOT = resolve(ROOT, 'dev/local-chain/blockchain');
-// The app-owned Foundry overlay config. forge runs with `--root ROOT` (the repo root) so the
-// out-of-submodule upstream sources resolve as in-project paths (see foundry.toml header); the
-// config itself stays in the overlay and is selected via FOUNDRY_CONFIG.
 export const FOUNDRY_CONFIG_PATH = resolve(CONTRACT_ROOT, 'foundry.toml');
 export const OUTBE_INTEX_ROOT = resolve(ROOT, 'blockchain/outbe-chain/contracts/intex');
 export const LOCAL_ROOT = resolve(ROOT, '.local');
@@ -102,15 +99,8 @@ export const ANVIL_LOG_PATH = resolve(LOCAL_ROOT, 'anvil.log');
 export const SCENARIO_PATH = resolve(LOCAL_ROOT, 'scenario.json');
 export const IMPLEMENTATION_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
 
-/** IntexAuction.sol:39 — escrow locks are native-18 WCOEN derived from the 1e6 protocol basis. */
 export const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n;
-/** BridgeMsgCodec.SCALE_1E6 — the bid-rate fixed-point scale. */
 export const BID_RATE_SCALE = 1_000_000n;
 
-/**
- * Mirrors IntexAuction.sol:403-405 exactly. The divide by the rate scale MUST precede the
- * native-units multiply: (x / 1e6) * 1e12 !== (x * 1e12) / 1e6 whenever x % 1e6 !== 0, so
- * reordering silently desyncs the harness from the chain (and from Desis.rate_lock).
- */
 export const escrowLockNative = (quantity, promisLoadMinor, bidRate) =>
   ((BigInt(quantity) * BigInt(promisLoadMinor) * BigInt(bidRate)) / BID_RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT;

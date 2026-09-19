@@ -72,11 +72,6 @@ contract DeployLocal is Script {
         auction.grantRole(auction.RELAYER_ROLE(), address(target));
         escrow.grantRole(escrow.RELAYER_ROLE(), address(target));
         nft.grantRole(nft.RELAYER_ROLE(), address(target));
-        // IntexNFT1155Bridge no longer defines SYSTEM_RELAYER_ROLE upstream: its send/mint path is
-        // permissionless (burns the caller's own tokens) and mint authorization is enforced by the
-        // token's own RELAYER_ROLE, granted to the bridge below. No bridge-side grant remains.
-        // Upstream IntexNFT1155 gates crosschainMint/crosschainBurn on RELAYER_ROLE (SYSTEM_RELAYER_ROLE
-        // was removed), so the RELAYER_ROLE grant above is all the bridge needs to mint/burn.
         nft.grantRole(nft.RELAYER_ROLE(), address(nftBridge));
 
         wcoen.mint(bidder, 200_000_000 ether);

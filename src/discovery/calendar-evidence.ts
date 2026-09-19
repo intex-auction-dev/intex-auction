@@ -567,10 +567,6 @@ const deliveryField = (messageType: number): keyof CalendarOriginDelivery => {
 };
 
 const mergeDelivery = (current: OriginDeliveryState, next: OriginDeliveryState): OriginDeliveryState => {
-  // Ranking encodes DECISION 2: a leg parked or flushed on-chain must always win over a bare
-  // `*Sent` event. Every `_sendOrPark` site emits its `*Sent` unconditionally with sendId==0 on the
-  // parked path (OriginRouter.sol:190,268-398,510), so a surviving `*Sent` can never outrank real
-  // MessageParked evidence into looking dispatched.
   const rank: Record<OriginDeliveryState, number> = {
     'not-observed': 0,
     dispatched: 1,
@@ -642,9 +638,6 @@ const scanRouterEvents = async (
     delivery.set(day, { ...current, [field]: mergeDelivery(current[field], state) });
   };
 
-  // DECISION 2: classify MessageParked evidence FIRST, so a bare `*Sent` for the same (day, leg) can
-  // only ever fill a leg still 'not-observed' — never overwrite parked/flushed. `parked` here records
-  // exactly which (day, field) legs were parked; a `*Sent` that names one of those is not dispatched.
   const parkedLegs = new Set<string>();
   const resentIndices = new Set(resent.map((log) => asBigint(log.args.idx, 'ParkedMessageResent idx').toString()));
   await boundedMap(parked, async (log) => {
@@ -674,8 +667,6 @@ const scanRouterEvents = async (
   });
 
   const markSent = (day: WorldwideDayKey, field: keyof CalendarOriginDelivery) => {
-    // A `*Sent` event dispatches a leg only when no MessageParked exists for it. sendId is never used
-    // to classify delivery: parked ⇒ sendId==0 is confirmed, the converse is unresolved (bridge-dependent).
     if (parkedLegs.has(`${day}:${field}`)) return;
     update(day, field, 'dispatched');
   };
@@ -872,9 +863,6 @@ const globalDisposition = (
   if (clearing?.kind === 'sale') return 'cleared-sale';
   if (clearing?.kind === 'no-sale') return 'cleared-no-sale';
   if (events.cancelled.has(day)) return 'cancelled-red';
-  // An unpriced day is cancelled and dispatched RED on-chain (desis/runtime.rs:475-497), but it was
-  // briefed with a limit so Metadosis still classifies it GREEN — it is NOT a red day. Keep it distinct
-  // from cancelled-red so the UI never claims the day type was red.
   if (events.cancelledUnpriced.has(day)) return 'cancelled-unpriced';
   if (events.overdue.has(day)) return 'overdue';
   if (stage === 'cleared') return 'cleared';

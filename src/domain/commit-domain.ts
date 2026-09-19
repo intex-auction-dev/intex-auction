@@ -110,17 +110,12 @@ const rawBidRatePercent = (input: {
   if (input.promisLoadMinor <= 0n) {
     throw new RangeError('Escrow basis must be greater than zero.');
   }
-  // paymentMinor is a native-18 WCOEN amount; promisLoadMinor is a 1e6 protocol basis. The escrow
-  // lock is (basis * rate / 1e6) * 1e12, so rate = paymentMinor * 1e6 / (basis * 1e12). Bring the
-  // payment down by NATIVE_UNITS_PER_PROTOCOL_UNIT so both sides share the 1e6 scale, else the ratio
-  // is inflated by 1e12 and every realistic payment saturates to 100%.
   const paymentMinor = parseUnsignedFixedInput(input.value, input.paymentTokenDecimals);
   const paymentProtocolMinor = paymentMinor / NATIVE_UNITS_PER_PROTOCOL_UNIT;
   const requestedRate =
     paymentProtocolMinor === 0n
       ? 0n
       : (paymentProtocolMinor * BID_RATE_SCALE + input.promisLoadMinor - 1n) / input.promisLoadMinor;
-  // DECISION 4: reject an over-100% payment rather than silently clamping to the maximum escrow.
   if (requestedRate > BID_RATE_SCALE) {
     throw new RangeError('Bid per Intex implies a rate above 100% of the escrow basis.');
   }

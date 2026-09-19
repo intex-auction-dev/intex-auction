@@ -49,10 +49,6 @@ describe('deriveRecoveryTimes', () => {
     ).toBe(900n + 3n * DAY);
   });
 
-  // EscrowAdapter.claimRefund gates the finalized no-split case on
-  // finalizedAt + POST_FINALIZE_REFUND_DELAY, the same gate as the split case.
-  // NO_SPLIT_REFUND_DELAY was removed upstream; a 30-day expectation here would
-  // reintroduce the wait the app used to misreport.
   it('uses the post-finalize refund clock for a finalized no-split lock', () => {
     expect(
       deriveRecoveryTimes(

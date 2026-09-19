@@ -145,10 +145,6 @@ check(
   same(await read(deployment.targetRouter, targetAbi, 'escrowAdapter'), deployment.escrowAdapter),
   'target escrow mismatch',
 );
-// Post-resync (outbe-chain d7c78459) TargetRouter.wire(auction, intex, escrowAdapter) no longer wires
-// an NFT bridge and TargetRouter exposes no nftBridge() accessor
-// (blockchain/outbe-chain/contracts/intex/src/target/TargetRouter.sol:176). The NFT bridge is
-// validated below via its own BRIDGE()/token() and the RELAYER_ROLE grant it receives.
 check(
   same(await read(deployment.targetRouter, targetAbi, 'tokenBridge'), deployment.tokenBridge),
   'target proceeds bridge mismatch',
@@ -202,9 +198,6 @@ const roleChecks = [
   [deployment.escrowAdapter, escrowAbi, 'RELAYER_ROLE', deployment.targetRouter, 'target lacks escrow RELAYER_ROLE'],
   [deployment.intexNFT1155, nftAbi, 'RELAYER_ROLE', deployment.targetRouter, 'target lacks NFT RELAYER_ROLE'],
   [deployment.intexNFT1155, nftAbi, 'RELAYER_ROLE', deployment.intexNFT1155Bridge, 'NFT bridge lacks NFT RELAYER_ROLE'],
-  // Upstream removed SYSTEM_RELAYER_ROLE: IntexNFT1155 now exposes only RELAYER_ROLE (checked
-  // above), and IntexNFT1155Bridge's send path is permissionless (it burns the caller's own
-  // tokens), so the bridge holds no role for the target router to be granted.
 ];
 for (const [address, abi, roleFunction, account, message] of roleChecks) {
   const role = await read(address, abi, roleFunction);

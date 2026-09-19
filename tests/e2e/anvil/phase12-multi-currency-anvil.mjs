@@ -172,10 +172,6 @@ for (const [wallet, bid] of [
 
 await mineAt(Number(auction.schedule.revealEnd) + 1);
 await write(operator, deployment.controller, controllerAbi, 'startClearing', [day]);
-// Upstream now carries the bids relay only as far as the CLEARING delivery's gas float allows and
-// exposes `relayBids(worldwideDay)` as a permissionless push for a relay that ran dry
-// (TargetRouter.sol:263). The single-chain local harness has no keeper, so drive it here until the
-// day reports done; without this the relay never leaves batch 0 and no bids reach Outbe.
 for (let round = 0; round < 8; round += 1) {
   const relay = await publicClient.readContract({
     address: deployment.targetRouter,

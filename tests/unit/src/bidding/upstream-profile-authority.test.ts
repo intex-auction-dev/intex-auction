@@ -73,11 +73,6 @@ class FakeChain {
     return {
       readContract: async (request: { functionName: string }) => {
         switch (request.functionName) {
-          // commitBid is whitelist-gated via requireWhitelisted(_s().whitelist, msg.sender)
-          // (IntexAuction.sol:298). The pre-commit preflight reads whitelist() first; a ZERO
-          // registry leaves the gate open (Whitelist.sol:16-20 requireWhitelisted), so the
-          // preflight short-circuits and never reads isWhitelisted. Returning the zero address
-          // keeps these tests exercising issuance-currency authority, not whitelist behaviour.
           case 'whitelist':
             return ZERO_ADDRESS;
           case 'getAuctionStage':

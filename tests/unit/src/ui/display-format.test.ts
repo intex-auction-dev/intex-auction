@@ -50,17 +50,12 @@ describe('display-format grouping idiom', () => {
   });
 
   it('formats promis at the 1e6 scale and trims the ladder to 4 fraction digits', () => {
-    // Promis is at the chain's 1e6 scale (PROMIS_DECIMALS), so at most 6 fraction digits exist and
-    // the 12/8 trim widths on formatPromisAmount/formatCompletionPromis never truncate a real value.
     expect(formatPromisAmount(1_234_567n)).toBe('1.234567');
     expect(formatCompletionPromis(1_234_567n)).toBe('1.234567');
-    // formatLadderPromis takes an explicit decimals argument from its caller; 4-digit trim applies.
     expect(formatLadderPromis(1_123_456_789_012_345_678n, 18)).toBe('1.1234');
   });
 
   it('pins promis formatting to the chain 1e6 scale (fails if 18 decimals returns)', () => {
-    // 1e6 minor units is exactly one Promis at PROMIS_DECIMALS=6. A hardcoded 18 would render
-    // this as 0.000000000001 — the 1e12-too-small A3 bug — so this locks the scale to the constant.
     expect(formatPromisAmount(1_000_000n)).toBe('1');
     expect(formatCompletionPromis(1_000_000n)).toBe('1');
   });
@@ -109,14 +104,12 @@ describe('display-format fixed-point rounding', () => {
     expect(formatOracleRate(1_000_000_000_000_000_000n)).toBe('1');
     // half-way at the 18th decimal is truncated downward, never rounded up
     expect(fixedPointTruncated(1_500_000_000_000_000_005n, ORACLE_RATE_SCALE, 18)).toBe('1.500000000000000005');
-    // PRICE_SCALE is now 1e6 (6 decimals): 1_999_999_999 minor = 1999.999999.
     expect(fixedPointTruncated(1_999_999_999n, PRICE_SCALE, 6)).toBe('1999.999999');
     expect(formatPrice(2_280_000n)).toBe('2.28');
     expect(fixedPointTruncated(LARGEST_REALISTIC, ORACLE_RATE_SCALE, 18)).toBe('1000000000000');
   });
 
   it('fixedPointRoundedTo2: rounds half-up to two grouped decimals', () => {
-    // 1e6-scaled prices (formatPriceMinor9's Minor9 name predates the 1e6 correction).
     expect(formatPriceMinor9(1_000_000n)).toBe('1.00'); // pinned: multi-currency-evidence.test.ts
     expect(formatPriceMinor9(1_080_000n)).toBe('1.08');
     expect(formatPriceMinor9(2_280_000n)).toBe('2.28');

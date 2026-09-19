@@ -251,10 +251,7 @@ export class CompletionVenueAdapter {
       tupleValue(tokenIdsRaw, 'issued', 0, 'IntexNFT1155.tokenIds'),
       'series issued token id',
     );
-    // ponytail: won-count is derived from this series' IntexIssued logs to the wallet — the
-    // chain removed getAuctionWonCount with no successor. A winner is proven only by a mint of
-    // this series' issued token to the wallet; a loser produces no such log, so wonCount is 0.
-    // Ceiling: O(n) over the wallet's IntexIssued logs, already scanned for deliveredEvent.
+    // ponytail: getAuctionWonCount was removed with no successor; ceiling is O(n) over already-scanned IntexIssued logs.
     const wonCount = issuedLogs.reduce<bigint>((sum, log, index) => {
       const args = logArgs(log, `issued log ${index}`);
       if (!sameAddress(args.to, wallet)) return sum;
@@ -392,10 +389,7 @@ export class CompletionVenueAdapter {
       knownTokenIds.push(series.issuedTokenId, series.settledTokenId);
     }
 
-    // ponytail: getOwnedSeriesWithBalancesPaginated was removed with no successor, so balances
-    // come from balanceOfBatch over the canonical series token ids in page-sized chunks. Only
-    // tokens that the series walk already mapped are queried, which keeps the enumeration
-    // paginated and log-free. Ceiling: page size caps balanceOfBatch fan-out per call.
+    // ponytail: the paginated owner view was removed; ceiling is the page size capping balanceOfBatch fan-out per call.
     const owned: Array<{ tokenId: bigint; balance: bigint }> = [];
     for (let offset = 0; offset < knownTokenIds.length; offset += pageSize) {
       const ids = knownTokenIds.slice(offset, offset + pageSize);

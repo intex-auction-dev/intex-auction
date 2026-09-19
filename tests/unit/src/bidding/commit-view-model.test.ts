@@ -34,7 +34,6 @@ describe('commit view model strike derivation', () => {
   });
 
   it('computes the frozen FX rate and null-guards a non-positive reference', () => {
-    // Entry prices are at the chain 1e6 scale; the FX rate is a scale-invariant ratio at 1e18.
     expect(strikeFxRate(34n * 10n ** 6n, 1n * 10n ** 6n)).toBe(34n * 10n ** 18n);
     expect(strikeFxRate(34n, 0n)).toBeNull();
     expect(strikeFxRate(null, 1n)).toBeNull();

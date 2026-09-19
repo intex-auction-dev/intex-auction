@@ -9,10 +9,6 @@ const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const readText = (path) => readFile(resolve(ROOT, path), 'utf8');
 const readAbi = async (path) => JSON.parse(await readText(path));
 
-// The signature checks below read the live submodule source, so they only prove the bundled ABIs
-// agree with the chain AT THE PINNED COMMIT. Advancing the pin without redoing the divergence
-// review is the case that hid the 2026-09 drift, so assert the pin still equals the commit the
-// ABIs were reviewed against. Update config/abi/abi-pin.json only as part of a review.
 const assertAbiPinMatchesSubmodule = async () => {
   const pin = JSON.parse(await readText('config/abi/abi-pin.json'));
   const head = execFileSync('git', ['-C', 'blockchain/outbe-chain', 'rev-parse', 'HEAD'], {
@@ -154,8 +150,6 @@ for (const signature of [
     `config/abi/IntexNFT1155.json lacks function ${signature}`,
   );
 }
-// Removed upstream at the pinned commit: reintroducing any of these means the bundled ABI has
-// drifted back behind the chain and a call would revert on an unknown selector.
 const forbiddenByAbi = {
   'config/abi/IntexNFT1155.json': [
     'expireSeries',

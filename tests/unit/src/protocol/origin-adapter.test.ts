@@ -274,8 +274,6 @@ describe('Outbe auction adapter', () => {
   });
 
   it('decodes the reshaped 18-field SeriesData tuple with issuedUnits at position 5', () => {
-    // Mirrors config/abi/IIntex.json SeriesData (verbatim from the chain export): 18 fields,
-    // field 5 is issuedUnits, ending worldwideDay, settledUnits, exercisedUnits, gemFactoryUnits.
     const seriesDataTuple = parseAbiParameters([
       '(bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits)',
     ]);
@@ -301,8 +299,6 @@ describe('Outbe auction adapter', () => {
     };
     const encoded = encodeAbiParameters(seriesDataTuple, [value]);
     const [decoded] = decodeAbiParameters(seriesDataTuple, encoded);
-    // issuedUnits, not the retired costAmountMinor, occupies field 5; settledUnits (a unit count)
-    // is a distinct trailing field and no longer collides with a monetary read.
     expect(decoded.issuedUnits).toBe(50);
     expect(decoded.settledUnits).toBe(3);
     expect('costAmountMinor' in decoded).toBe(false);

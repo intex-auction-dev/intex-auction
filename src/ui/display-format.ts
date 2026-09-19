@@ -34,9 +34,6 @@ const withTokenSymbol = (amount: string, symbol: string): string => {
 };
 
 /**
- * A Promis amount at the chain's `PROMIS_DECIMALS` scale, no symbol, trimmed to 12 fraction digits.
- * Was duplicated as `formatPromisAmount` (commit-panel, receipt-tools) and `formatTokenAmount18`
- * (public-auction-view). The scale tracks the shared constant so it cannot drift from the chain.
  */
 export const formatPromisAmount = (value: bigint): string => groupedTokenAmount(value, PROMIS_DECIMALS, 12);
 
@@ -63,7 +60,6 @@ export const formatRecoveryTokenAmount = (value: bigint, decimals: number | null
   return `${groupedTokenAmount(value, decimals, 12)} ${symbol}`;
 };
 
-/** Completion-card Promis: `PROMIS_DECIMALS` scale trimmed to 8 fraction digits. */
 export const formatCompletionPromis = (value: bigint): string => groupedTokenAmount(value, PROMIS_DECIMALS, 8);
 
 /** Venue demand-ladder Promis: `PROMIS_DECIMALS` trimmed to 4 fraction digits. */
@@ -135,10 +131,6 @@ export const scheduleTime = (value: bigint): string => {
  *    shape (`oracle-price-chart.test.tsx`, "keeps unchanged digit positions stable").
  *
  *  - `fixedPointRoundedTo2` rounds half-up to exactly two decimals and groups the whole part:
- *    `formatPriceMinor9(1e6)` → `'1.00'`, `formatPriceMinor9(1e18)` → `'1,000,000,000,000.00'`,
- *    `formatOracleRate18(1e6)` → `'0.00'`. Pinned by
- *    `tests/unit/src/oracle/multi-currency-evidence.test.ts` ("pins the auction price scale to 1e6,
- *    distinct from the 1e18 Oracle rate scale").
  *
  * A single function cannot return both `'1.5'` and `'1.50'`/`'0.00'` for equivalent inputs, so the
  * "one rounding rule" the proposal asked for is expressed as one documented core with two named,
@@ -161,7 +153,6 @@ export const fixedPointRoundedTo2 = (value: bigint, scale: bigint): string => {
 /** Oracle rate (1e18 scale) as a truncated, ungrouped decimal — chart axis / flowing price. */
 export const formatOracleRate = (value: bigint): string => fixedPointTruncated(value, ORACLE_RATE_SCALE, 18);
 
-/** Auction price (1e6 scale) as a truncated, ungrouped decimal — chart overlays. */
 export const formatPrice = (value: bigint): string => fixedPointTruncated(value, PRICE_SCALE, 6);
 
 /** Oracle rate (1e18 scale) rounded half-up to two grouped decimals — currency evidence copy. */
@@ -170,7 +161,4 @@ export const formatOracleRate18 = (rate: bigint): string => fixedPointRoundedTo2
 /** COEN minor amount (1e18 scale) rounded half-up to two grouped decimals — currency evidence copy. */
 export const formatCurrencyMinor18 = (amount: bigint): string => fixedPointRoundedTo2(amount, ORACLE_RATE_SCALE);
 
-// The `Minor9` suffix predates the 1e6 scale correction (PRICE_SCALE is now 1e6). The name is
-// re-exported through six files, so renaming it is pure churn; rounding to 2 places is scale-agnostic.
-/** Auction price minor (1e6 scale) rounded half-up to two grouped decimals — reference values. */
 export const formatPriceMinor9 = (amount: bigint): string => fixedPointRoundedTo2(amount, PRICE_SCALE);

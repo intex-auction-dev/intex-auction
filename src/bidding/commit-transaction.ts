@@ -47,10 +47,6 @@ const ZERO_HASH = `0x${'0'.repeat(64)}` as Hash;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
 const SUPPORTED_ISSUANCE_CURRENCIES = Object.freeze(Array.from({ length: 999 }, (_, index) => index + 1));
 
-// Only `commitBid` is whitelist-gated on the reviewed IntexAuction profile (single
-// `requireWhitelisted` at IntexAuction.sol:298; revealBid/cancelCommit/claims are not gated),
-// so this preflight must never block reveal or recovery for an already-committed bidder.
-// Shared with the post-submit revert backstop so the pre-check and the race case read identically.
 export const WHITELIST_INELIGIBLE_MESSAGE =
   'This wallet is not on the auction whitelist and cannot commit a bid. Ask the deployment operator to add it, then reconnect.';
 
@@ -130,11 +126,7 @@ const assertStorageAvailable = (storage: ReceiptStorage): void => {
 const adapterFor = (publicClient: PublicClient, profile: ResolvedVenueReadProfile): VenueAuctionAdapter =>
   new VenueAuctionAdapter(fromViemPublicClient(publicClient), profile);
 
-// E1 whitelist gate: read the registry the auction points its `commitBid` gate at, then the
-// bidder's membership, BEFORE any EIP-712 signature or approval. A zero registry leaves the gate
-// open by design (Whitelist.sol requireWhitelisted), so it costs zero extra RPC calls.
-// ponytail: point-in-time read — a registry update between this check and mining can still revert
-// with NotWhitelisted; that revert is named by src/chain/revert-classify.ts as the backstop.
+// ponytail: point-in-time read; a registry change before mining still reverts NotWhitelisted, named by revert-classify.
 const requireWhitelistEligibility = async (input: {
   readonly publicClient: PublicClient;
   readonly auctionProxy: Address;
@@ -274,8 +266,6 @@ export const executeCommitTransaction = async (input: {
   const adapter = adapterFor(input.publicClient, input.profile);
   assertStorageAvailable(input.storage);
   contextIsCurrent(input);
-  // E1: gate the wallet before it signs anything. Today an ineligible bidder signs reveal
-  // material and only then hits an unnamed revert; this fails first, before signTypedData.
   await requireWhitelistEligibility({
     publicClient: input.publicClient,
     auctionProxy: input.context.auctionProxy,

@@ -23,10 +23,6 @@ import {
   type BidderActionWalletClient,
 } from '@/bidding/cancel-reveal-transaction';
 
-// The chain converts the six-decimal escrow result into native-18 WCOEN by multiplying by
-// NATIVE_UNITS_PER_PROTOCOL_UNIT (IntexAuction.sol:39, :403-405). Fixtures below are pinned to
-// this native scale so balances/allowances/bonds/locks exercise the same situations as before the
-// escrow-lock correction. Kept as a literal to avoid importing production constants into fixtures.
 const NATIVE_UNITS_PER_PROTOCOL_UNIT = 1_000_000_000_000n; // 1e12
 
 const ESCROW = '0x000000000000000000000000000000000000eC01' as Address;
@@ -174,9 +170,6 @@ class Phase8Chain {
           case 'symbol':
             return 'WCOEN';
           case 'whitelist':
-            // Commit/recommit path reads the auction's whitelist registry before signing. A zero
-            // registry leaves the gate open by design (Whitelist.sol requireWhitelisted), which is
-            // the situation these fixtures exercise. Not related to the escrow-lock scale.
             return ZERO_ADDRESS;
           default:
             throw new Error(`Unexpected read ${request.functionName}`);
@@ -317,7 +310,6 @@ class Phase8Chain {
           this.pendingReveal = {
             quantity,
             bidRate,
-            // Mirror IntexAuction.revealBid exactly: six-decimal escrow result, then *1e12 to native-18.
             lockAmount: ((BigInt(quantity) * 100n * BigInt(bidRate)) / 1_000_000n) * NATIVE_UNITS_PER_PROTOCOL_UNIT,
           };
         }
@@ -568,7 +560,6 @@ describe('Phase 8 bidder transaction boundaries', () => {
   });
 
   it('uses the bond in effective balance but approves the exact full reveal lock', async () => {
-    // bond + balance exactly cover the native-18 lock; allowance starts at zero.
     const chain = new Phase8Chain({
       stage: 1,
       bond: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
@@ -591,9 +582,6 @@ describe('Phase 8 bidder transaction boundaries', () => {
       effectiveBalance: 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
       liveBondContribution: 50n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
     });
-    // A1 regression guard: the approval must be the EXACT native-18 lock (six-decimal escrow result
-    // * 1e12). This assertion fails if the 1e12 NATIVE_UNITS_PER_PROTOCOL_UNIT factor is ever dropped
-    // from calculateEscrowLockMinor, because the approve arg would collapse back to 100n.
     expect(chain.writes[0]).toMatchObject({
       functionName: 'approve',
       args: [getAddress(ESCROW), 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT],
@@ -654,7 +642,6 @@ describe('Phase 8 bidder transaction boundaries', () => {
   });
 
   it('requires full-lock allowance even when the bond funds the entire reveal balance', async () => {
-    // The bond alone covers the whole native-18 lock, yet the approval must still be the full lock.
     const chain = new Phase8Chain({
       stage: 1,
       bond: 100n * NATIVE_UNITS_PER_PROTOCOL_UNIT,

@@ -19,8 +19,6 @@ export const deriveRecoveryTimes = ({
     if (!escrow?.finalized) {
       escrowRecoveryClaimableAt = BigInt(lock.lockedAt) + BigInt(unfinalizedRefundDelay);
     } else {
-      // claimRefund gates both the split-recorded and no-split post-finalize cases on
-      // finalizedAt + POST_FINALIZE_REFUND_DELAY (EscrowAdapter.claimRefund).
       escrowRecoveryClaimableAt = BigInt(escrow.finalizedAt) + BigInt(postFinalizeRefundDelay);
     }
   }

@@ -754,8 +754,6 @@ const status = async () => {
       [],
     ),
     safe(async () => {
-      // getOwnedSeriesWithBalancesPaginated was removed upstream with no successor. Read the
-      // tester's issued balance per series of the day via ownerBalances(seriesId, owner).
       const daySeries = await publicClient.readContract({
         address: deployment.intexNFT1155,
         abi: nftAbi,
@@ -1017,8 +1015,6 @@ try {
     if (!escrowState.finalized) {
       targetTime = Number(lock.lockedAt) + Number(unfinalizedDelay);
     } else {
-      // Post-finalize claimRefund gates both the split-recorded and no-split cases on
-      // finalizedAt + POST_FINALIZE_REFUND_DELAY (EscrowAdapter.claimRefund).
       targetTime = Number(escrowState.finalizedAt) + Number(postFinalizeDelay);
     }
     await mineAt(targetTime);

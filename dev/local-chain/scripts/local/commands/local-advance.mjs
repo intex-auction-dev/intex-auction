@@ -179,8 +179,6 @@ if (
     );
     deadline = Number(state[2]) + delay;
   } else {
-    // No-split post-finalize refunds gate on finalizedAt + POST_FINALIZE_REFUND_DELAY and revert
-    // RefundNotYetClaimable before the deadline, then pay the full principal (EscrowAdapter.claimRefund).
     const delay = Number(
       await readConstant(scenario.escrowAdapter ?? deployment.escrowAdapter, escrowAbi, 'POST_FINALIZE_REFUND_DELAY'),
     );

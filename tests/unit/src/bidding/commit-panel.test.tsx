@@ -28,7 +28,6 @@ describe('commit action rail presentation', () => {
     expect(commitFormCopy.quantityHint(2)).toBe('Min – 2 Intexes.');
     expect(commitFormCopy.bidRateHint(50_000)).toBe('Percent of escrow basis. Min – 5%.');
     expect(commitFormCopy.bidRate(50_000)).toBe('5% of escrow basis');
-    // F1 regression: the bid-rate copy must not mislabel the rate as a percentage of strike.
     expect(commitFormCopy.bidRateHint(50_000).toLowerCase()).not.toContain('strike');
     expect(commitFormCopy.bidRate(50_000).toLowerCase()).not.toContain('strike');
     expect(commitFormCopy.bond('Œ100')).toBe('Committing locks a refundable Œ100 bond.');

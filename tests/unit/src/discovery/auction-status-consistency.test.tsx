@@ -55,7 +55,6 @@ describe('auction status consistency', () => {
       globalAuction: { terminalDisposition: 'cancelled-unpriced' },
     } as unknown as CalendarWorldwideDay;
 
-    // The detail surface owns the source-of-truth wording/tone; the calendar must agree.
     expect(venueStatusPresentation(null, unpricedDay)).toMatchObject({ label: 'CANCELLED', tone: 'neutral' });
 
     const markup = renderToStaticMarkup(<CalendarSelectionSummary day={unpricedDay} />);

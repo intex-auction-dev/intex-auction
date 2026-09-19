@@ -800,8 +800,6 @@ contract LocalProtocolController {
     }
 
     function startClearing(uint32 worldwideDay) external onlyOperator {
-        // Upstream sendAuctionStageClearing(worldwideDay, dstChainId, gasLimit). The single-chain local
-        // harness clears to its own chain; gasLimit 0 lets the router floor to its clearing budget.
         originRouter.sendAuctionStageClearing(worldwideDay, uint32(block.chainid), 0);
         _auctionStages[worldwideDay] = IDesis.AuctionStage.Clearing;
         emit AuctionClearingStarted(worldwideDay);
@@ -836,20 +834,16 @@ contract LocalProtocolController {
         uint32 dstChainId,
         IOriginRouter.IssuanceInstructionsParams[] calldata series
     ) external onlyOperator {
-        // Upstream sendIssuanceInstructions(dstChainId, worldwideDay, chunkIndex, totalChunks, series).
-        // The local harness sends one whole day in a single chunk; worldwideDay is carried by each param.
         originRouter.sendIssuanceInstructions(dstChainId, series[0].worldwideDay, 0, 1, series);
     }
 
     function markQualified(bytes14 seriesId, uint32 worldwideDay) external onlyOperator {
-        // Upstream sendMarkQualified(worldwideDay, bytes14[] seriesIds) broadcasts one day's series.
         bytes14[] memory seriesIds = new bytes14[](1);
         seriesIds[0] = seriesId;
         originRouter.sendMarkQualified(worldwideDay, seriesIds);
     }
 
     function markCalled(bytes14 seriesId, uint32 worldwideDay) external onlyOperator {
-        // Upstream sendMarkCalled(worldwideDay, calledAt, bytes14[] seriesIds); calledAt is the origin stamp.
         bytes14[] memory seriesIds = new bytes14[](1);
         seriesIds[0] = seriesId;
         originRouter.sendMarkCalled(worldwideDay, uint32(block.timestamp), seriesIds);

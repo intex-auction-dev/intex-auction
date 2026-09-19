@@ -26,7 +26,6 @@ import {LocalTokenBridge} from "@local-mocks/LocalTokenBridge.sol";
 contract LocalLoopbackTest is Test {
     uint32 internal constant DAY = 20260714;
     uint128 internal constant PROMIS_LOAD_MINOR = 1000;
-    /// @dev IntexAuction.sol:39 -- escrow locks are native-18 WCOEN derived from the 1e6 basis.
     uint128 internal constant NATIVE_UNITS_PER_PROTOCOL_UNIT = 1e12;
     uint16 internal constant ISSUANCE_CCY = 840;
     uint16 internal constant REFERENCE_CCY = 840;

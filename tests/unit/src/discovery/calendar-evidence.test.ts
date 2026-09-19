@@ -825,8 +825,6 @@ describe('Phase 4 calendar evidence', () => {
     const parkedResult = wwd('20260804');
     const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
 
-    // Every _sendOrPark site emits its *Sent unconditionally with sendId==0 on the parked path
-    // (OriginRouter.sol). A surviving AuctionResultSent for a day that ALSO parked must not read as dispatched.
     const originLogs = new Map<string, readonly unknown[]>([
       ['AuctionCreated', [log({ worldwideDay: Number(parkedResult) })]],
       [
@@ -887,7 +885,6 @@ describe('Phase 4 calendar evidence', () => {
       ['AuctionCreated', [log({ worldwideDay: Number(parkedDay) })]],
       ['MessageParked', [log({ idx: 4n, dstChainId: 31337, msgType: 5 }, TX_A, 40)]],
     ]);
-    // Positional tuple: [0]=dstChainId, [1]=gasLimit, [2]=sent, [3]=payload.
     const positionalTuple = [31337, 1n, false, resultPayload(parkedDay)];
     class RecordingClient extends LogClient {
       override async readContract(request: {
@@ -933,7 +930,6 @@ describe('Phase 4 calendar evidence', () => {
     const cell = result.days.find((day) => day.worldwideDay === parkedDay);
     expect(functionCalls).toContain('parkedMessage');
     expect(functionCalls).not.toContain('parkedSend');
-    // Positional decode ([3]=payload) resolved the WWD and classified the leg parked.
     expect(cell?.originDelivery.result).toBe('parked');
     expect(cell?.failures.some((failure) => failure.authority === 'origin-router')).toBe(false);
   });
@@ -955,7 +951,6 @@ describe('Phase 4 calendar evidence', () => {
       originAdapter: {
         validateDeployment: async () => undefined,
         readRetainedWorldwideDays: async () => [unpriced],
-        // Metadosis still classifies an unpriced day GREEN (it was briefed with a limit).
         readWorldwideDay: async (day) =>
           day === unpriced
             ? snapshot(day, 'completed', 'green')
@@ -979,16 +974,11 @@ describe('Phase 4 calendar evidence', () => {
     const cell = result.days.find((day) => day.worldwideDay === unpriced);
     expect(cell?.globalAuction.terminalDisposition).toBe('cancelled-unpriced');
     expect(cell?.globalAuction.terminalDisposition).not.toBe('active');
-    // Cancelled, but NOT a red day: the day type stays green and the disposition is not cancelled-red.
     expect(cell?.globalAuction.terminalDisposition).not.toBe('cancelled-red');
     expect(cell?.dayType).toBe('green');
   });
 
   it('ranks a re-flushed leg above the earlier parked evidence for the same result leg (mergeDelivery rank)', async () => {
-    // Two MessageParked logs for the SAME (day, result) leg: idx 1 parked (sent=false), idx 2 flushed
-    // (sent=true). No `*Sent` is present, so the markSent short-circuit plays no part — only the
-    // mergeDelivery rank decides. flushed must outrank parked; if that ordering is inverted or dropped
-    // the merged result silently regresses to 'parked' and a bidder is told a flushed leg is still parked.
     const reflushed = wwd('20260804');
     const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
 

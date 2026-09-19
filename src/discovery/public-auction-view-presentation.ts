@@ -96,9 +96,6 @@ export const venueStatusPresentation = (
   if (day?.dayType === 'red' || day?.globalAuction.terminalDisposition === 'cancelled-red') {
     return { animated: false, kind: 'cancelled', label: 'CANCELLED', tone: 'danger' };
   }
-  // An unpriced day is cancelled on-chain but is NOT a red day (desis/runtime.rs:475-497 emits
-  // AuctionCancelledUnpriced, and Metadosis still classifies it green). Report it as cancelled without
-  // borrowing the red-day danger tone, so the panel never implies the day type was red.
   if (day?.globalAuction.terminalDisposition === 'cancelled-unpriced') {
     return { animated: false, kind: 'cancelled', label: 'CANCELLED', tone: 'neutral' };
   }
