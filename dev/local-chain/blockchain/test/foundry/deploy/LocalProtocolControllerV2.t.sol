@@ -16,7 +16,7 @@ contract LocalProtocolControllerV2Test is Test {
                 promisLoadMinor: 1_000,
                 entryPriceMinor: 100,
                 floorPriceMinor: 108,
-                issuedIntexCount: 50,
+                issuedUnits: 50,
                 callWindow: 30,
                 callThreshold: 21,
                 callPriceMinor: 228,
@@ -27,7 +27,9 @@ contract LocalProtocolControllerV2Test is Test {
                 issuanceCurrency: 840,
                 referenceCurrency: 840,
                 worldwideDay: 20260803,
-                costAmountMinor: 100_000
+                settledUnits: 12,
+                exercisedUnits: 3,
+                gemFactoryUnits: 5
             })
         );
 
@@ -37,9 +39,11 @@ contract LocalProtocolControllerV2Test is Test {
 
         LocalProtocolController.SeriesData memory data = controller.seriesData(SERIES_ID);
         assertEq(data.promisLoadMinor, 1_000);
-        assertEq(data.issuedIntexCount, 50);
+        assertEq(data.issuedUnits, 50);
         assertEq(data.callPriceMinor, 228);
-        assertEq(data.costAmountMinor, 100_000);
+        assertEq(data.settledUnits, 12);
+        assertEq(data.exercisedUnits, 3);
+        assertEq(data.gemFactoryUnits, 5);
         assertEq(data.worldwideDay, 20260803);
     }
 

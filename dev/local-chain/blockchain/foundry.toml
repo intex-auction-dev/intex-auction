@@ -1,31 +1,51 @@
+# App-owned Foundry overlay for the local Anvil deployment.
+#
+# The forge project root is the REPOSITORY ROOT, not this directory, and every path below is
+# repo-root-relative. This is required, not cosmetic: the upstream contract sources live in the
+# pinned `blockchain/outbe-chain` submodule, one level *outside* this overlay directory. If the
+# project root were this directory, those sources would only be reachable through an out-of-root
+# `../../../blockchain/...` relative path, and forge 1.7.1 cannot resolve the compiled *artifact*
+# of a nested (library-depending) library — e.g. upstream's `TargetInbound`, which itself links
+# `BridgeMsgCodec` — when its source path escapes the project root. `forge script` then aborts with
+# "wasn't able to find artifact for library TargetInbound at ../../../blockchain/.../TargetInbound.sol"
+# even though the artifact exists and `--libraries`/`allow_paths` are supplied. Leaf out-of-root
+# libraries resolve fine; only the nested case trips the bug.
+#
+# Rooting at the repo root keeps every upstream source path inside the project (`blockchain/...`,
+# no `../`), so forge resolves and auto-deploys the whole library graph natively. The invoking
+# scripts pass `--root <repo root>` and point `FOUNDRY_CONFIG` at this file; artifacts and cache
+# stay under this overlay directory so the committed `.gitignore` here still applies.
 [profile.default]
 solc_version = '0.8.30'
 evm_version = 'Prague'
 bytecode_hash = 'none'
 cbor_metadata = false
-src = 'src'
-out = 'out'
-test = 'test/foundry'
-script = 'deploy'
-cache_path = 'cache/foundry'
+src = 'dev/local-chain/blockchain/src'
+out = 'dev/local-chain/blockchain/out'
+broadcast = 'dev/local-chain/blockchain/broadcast'
+test = 'dev/local-chain/blockchain/test/foundry'
+script = 'dev/local-chain/blockchain/deploy'
+cache_path = 'dev/local-chain/blockchain/cache/foundry'
 verbosity = 3
 optimizer = true
 optimizer_runs = 200
 via_ir = true
 build_info = true
 extra_output = ['storageLayout']
-libs = ['node_modules', '../../../blockchain/outbe-chain']
-fs_permissions = [{ access = 'read-write', path = '../../../.local' }]
+libs = ['dev/local-chain/blockchain/node_modules', 'blockchain/outbe-chain']
+fs_permissions = [{ access = 'read-write', path = '.local' }]
 remappings = [
-    # Upstream contract sources referenced through the outbe-chain submodule.
-    '@contracts/=../../../blockchain/outbe-chain/contracts/intex/src/',
-    '@precompiles/=../../../blockchain/outbe-chain/contracts/precompiles/src/',
+    # Upstream contract sources referenced through the outbe-chain submodule (repo-root-relative).
+    '@contracts/=blockchain/outbe-chain/contracts/intex/src/',
+    '@precompiles/=blockchain/outbe-chain/contracts/precompiles/src/',
+    # Shared upstream contracts (e.g. Whitelist), mirroring upstream `@shared/=../shared/src/`.
+    '@shared/=blockchain/outbe-chain/contracts/shared/src/',
     # App-owned local mocks. Uses a distinct prefix: a longer `@test-mocks/local/` key listed
     # before `@test-mocks/` would shadow (drop) the latter in forge 1.7.1's resolver.
-    '@local-mocks/=test/mocks/local/',
+    '@local-mocks/=dev/local-chain/blockchain/test/mocks/local/',
     # Upstream test mocks reused by the local deployment.
-    '@test-mocks/=../../../blockchain/outbe-chain/contracts/intex/test/mocks/',
-    'forge-std/=../../../blockchain/outbe-chain/contracts/intex/node_modules/forge-std/src/',
-    'ds-test/=../../../blockchain/outbe-chain/contracts/intex/node_modules/forge-std/lib/ds-test/src/',
-    '@openzeppelin/=../../../blockchain/outbe-chain/contracts/intex/node_modules/@openzeppelin/',
+    '@test-mocks/=blockchain/outbe-chain/contracts/intex/test/mocks/',
+    'forge-std/=blockchain/outbe-chain/contracts/intex/node_modules/forge-std/src/',
+    'ds-test/=blockchain/outbe-chain/contracts/intex/node_modules/forge-std/lib/ds-test/src/',
+    '@openzeppelin/=blockchain/outbe-chain/contracts/intex/node_modules/@openzeppelin/',
 ]

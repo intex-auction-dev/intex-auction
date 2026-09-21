@@ -64,7 +64,7 @@ contract DeployLocal is Script {
         escrow.wire(address(auction), address(compact), address(wcoen));
         escrow.setProceedsRecipient(address(target));
         auction.wire(address(escrow));
-        target.wire(address(auction), address(nft), address(escrow), address(nftBridge));
+        target.wire(address(auction), address(nft), address(escrow));
 
         origin.setProceedsRoute(address(tokenBridge), address(wcoen));
         target.setProceedsRoute(address(tokenBridge), address(origin));
@@ -72,9 +72,7 @@ contract DeployLocal is Script {
         auction.grantRole(auction.RELAYER_ROLE(), address(target));
         escrow.grantRole(escrow.RELAYER_ROLE(), address(target));
         nft.grantRole(nft.RELAYER_ROLE(), address(target));
-        nftBridge.grantRole(nftBridge.SYSTEM_RELAYER_ROLE(), address(target));
         nft.grantRole(nft.RELAYER_ROLE(), address(nftBridge));
-        nft.grantRole(nft.SYSTEM_RELAYER_ROLE(), address(nftBridge));
 
         wcoen.mint(bidder, 200_000_000 ether);
         wcoen.mint(backgroundBidder, 200_000_000 ether);

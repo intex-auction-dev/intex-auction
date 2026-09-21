@@ -19,9 +19,10 @@ describe('Phase 10 completion domain', () => {
   });
 
   it('decodes reviewed lifecycle and token tags and rejects unknown tags', () => {
-    expect([0, 1, 2].map(decodeIntexLifecycle)).toEqual(['issued', 'qualified', 'called']);
+    expect([0, 1, 2, 3].map(decodeIntexLifecycle)).toEqual(['issued', 'qualified', 'called', 'expired']);
+    expect(decodeIntexLifecycle(3)).toBe('expired');
     expect([0, 1].map(decodeIntexTokenStatus)).toEqual(['issued', 'settled']);
-    expect(() => decodeIntexLifecycle(3)).toThrow('unsupported tag');
+    expect(() => decodeIntexLifecycle(4)).toThrow('unsupported tag');
     expect(() => decodeIntexTokenStatus(2)).toThrow('unsupported tag');
   });
 
@@ -35,7 +36,7 @@ describe('Phase 10 completion domain', () => {
   it('derives exact normal economics only from finalized lock and delivered allocation evidence', () => {
     expect(
       deriveBidderEconomics({
-        lockedAmount: 1_000n,
+        lockedAmount: 1_000_000_000_000_000n,
         lockStatus: 'finalized',
         wonCount: 1n,
         promisLoadMinor: 1_000n,
@@ -46,16 +47,16 @@ describe('Phase 10 completion domain', () => {
       }),
     ).toEqual({
       kind: 'finalized',
-      lockedAmount: 1_000n,
-      paidAmount: 600n,
-      refundedAmount: 400n,
+      lockedAmount: 1_000_000_000_000_000n,
+      paidAmount: 600_000_000_000_000n,
+      refundedAmount: 400_000_000_000_000n,
       burnedAmount: 0n,
       wonCount: 1n,
       source: 'normal-finalization',
     });
     expect(
       deriveBidderEconomics({
-        lockedAmount: 1_000n,
+        lockedAmount: 1_000_000_000_000_000n,
         lockStatus: 'finalized',
         wonCount: 1n,
         promisLoadMinor: 1_000n,

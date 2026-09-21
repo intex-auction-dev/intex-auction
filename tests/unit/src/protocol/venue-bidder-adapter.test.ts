@@ -171,7 +171,6 @@ describe('venue bidder adapter', () => {
       [key(HISTORICAL_ESCROW, 'COMMIT_BOND_ABANDON_DELAY'), 10n],
       [key(HISTORICAL_ESCROW, 'UNFINALIZED_REFUND_DELAY'), 20n],
       [key(HISTORICAL_ESCROW, 'POST_FINALIZE_REFUND_DELAY'), 30n],
-      [key(HISTORICAL_ESCROW, 'NO_SPLIT_REFUND_DELAY'), 40n],
       [key(HISTORICAL_ESCROW, 'getCommitBond'), [10n, 50n]],
       [key(HISTORICAL_ESCROW, 'getBidLock'), [20n, 60n, 1, 0n, false]],
       [key(HISTORICAL_ESCROW, 'auctionEscrowState'), [20n, 1n, 0n, false]],
@@ -187,6 +186,11 @@ describe('venue bidder adapter', () => {
         paymentTokenSymbol: 'OLD',
         bond: { amount: 10n, lockedAt: 50n },
         bidLock: { lockedAmount: 20n, lockedAt: 60n, status: 'locked', failedRefund: 0n, splitRecorded: false },
+        constants: {
+          abandonedCommitBondDelay: 10n,
+          unfinalizedRefundDelay: 20n,
+          postFinalizeRefundDelay: 30n,
+        },
       }),
     );
     expect(

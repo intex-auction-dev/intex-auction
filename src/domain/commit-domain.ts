@@ -1,4 +1,5 @@
 import { BID_RATE_SCALE, calculateEscrowLockMinor, UINT16_MAX, UINT32_MAX } from './escrow-lock';
+import { NATIVE_UNITS_PER_PROTOCOL_UNIT } from './protocol-constants';
 
 export interface CommitBidConstraints {
   readonly minQuantity: number;
@@ -110,9 +111,15 @@ const rawBidRatePercent = (input: {
     throw new RangeError('Escrow basis must be greater than zero.');
   }
   const paymentMinor = parseUnsignedFixedInput(input.value, input.paymentTokenDecimals);
+  const paymentProtocolMinor = paymentMinor / NATIVE_UNITS_PER_PROTOCOL_UNIT;
   const requestedRate =
-    paymentMinor === 0n ? 0n : (paymentMinor * BID_RATE_SCALE + input.promisLoadMinor - 1n) / input.promisLoadMinor;
-  return requestedRate > BID_RATE_SCALE ? BID_RATE_SCALE : requestedRate;
+    paymentProtocolMinor === 0n
+      ? 0n
+      : (paymentProtocolMinor * BID_RATE_SCALE + input.promisLoadMinor - 1n) / input.promisLoadMinor;
+  if (requestedRate > BID_RATE_SCALE) {
+    throw new RangeError('Bid per Intex implies a rate above 100% of the escrow basis.');
+  }
+  return requestedRate;
 };
 
 export const validateCommitBidInput = (input: {

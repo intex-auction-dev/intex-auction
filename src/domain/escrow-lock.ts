@@ -1,3 +1,5 @@
+import { NATIVE_UNITS_PER_PROTOCOL_UNIT } from './protocol-constants';
+
 export const BID_RATE_SCALE = 1_000_000n;
 export const UINT16_MAX = (1n << 16n) - 1n;
 export const UINT32_MAX = (1n << 32n) - 1n;
@@ -20,14 +22,13 @@ export const calculateEscrowLockMinor = ({ quantity, promisLoadMinor, bidRate }:
   requireRange('promisLoadMinor', promisLoadMinor, 0n, UINT128_MAX);
   requireRange('bidRate', bidRate, 1n, BID_RATE_SCALE);
 
-  const lockAmount = (quantity * promisLoadMinor * bidRate) / BID_RATE_SCALE;
+  const lockAmount = ((quantity * promisLoadMinor * bidRate) / BID_RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT;
   if (lockAmount > UINT128_MAX) {
     throw new RangeError('Escrow lock amount exceeds uint128.');
   }
   return lockAmount;
 };
 
-// Mirrors IntexAuction.revealBid's uint128 escrow-lock overflow bound.
 export const maxQuantityForEscrowLock = ({
   promisLoadMinor,
   bidRate,
@@ -36,6 +37,14 @@ export const maxQuantityForEscrowLock = ({
   readonly bidRate: bigint;
 }): bigint => {
   if (promisLoadMinor <= 0n || bidRate <= 0n) return UINT16_MAX;
-  const byLockCap = (UINT128_MAX * BID_RATE_SCALE) / (promisLoadMinor * bidRate);
-  return byLockCap > UINT16_MAX ? UINT16_MAX : byLockCap;
+  const perQuantityNative = ((promisLoadMinor * bidRate) / BID_RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT;
+  if (perQuantityNative <= 0n) return UINT16_MAX;
+  let cap = UINT128_MAX / perQuantityNative;
+  while (
+    cap < UINT16_MAX &&
+    (((cap + 1n) * promisLoadMinor * bidRate) / BID_RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT <= UINT128_MAX
+  ) {
+    cap += 1n;
+  }
+  return cap > UINT16_MAX ? UINT16_MAX : cap;
 };

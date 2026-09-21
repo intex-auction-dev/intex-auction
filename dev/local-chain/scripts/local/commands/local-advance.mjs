@@ -166,7 +166,7 @@ if (
   if (Number(lock.status) !== 1) throw new Error('The seeded scenario has no active bidder lock.');
 
   let deadline;
-  let beforeError = 'RefundNotYetClaimable';
+  const beforeError = 'RefundNotYetClaimable';
   let beforeArgs;
   if (target.startsWith('unfinalized-refund-')) {
     const delay = Number(
@@ -180,11 +180,9 @@ if (
     deadline = Number(state[2]) + delay;
   } else {
     const delay = Number(
-      await readConstant(scenario.escrowAdapter ?? deployment.escrowAdapter, escrowAbi, 'NO_SPLIT_REFUND_DELAY'),
+      await readConstant(scenario.escrowAdapter ?? deployment.escrowAdapter, escrowAbi, 'POST_FINALIZE_REFUND_DELAY'),
     );
     deadline = Number(state[2]) + delay;
-    beforeError = 'SplitNotRecorded';
-    beforeArgs = [worldwideDay, bidder];
   }
 
   timestamp = target.endsWith('before-claimable') ? deadline - 1 : deadline;

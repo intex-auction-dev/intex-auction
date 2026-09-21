@@ -301,7 +301,7 @@ export class OutbeAuctionAdapter {
       promisLoadMinor: asBigint(raw.promisLoadMinor, 'Intex.promisLoadMinor'),
       entryPriceMinor: asBigint(raw.entryPriceMinor, 'Intex.entryPriceMinor'),
       floorPriceMinor: asBigint(raw.floorPriceMinor, 'Intex.floorPriceMinor'),
-      issuedIntexCount: asSafeNumber(raw.issuedIntexCount, 'Intex.issuedIntexCount'),
+      issuedIntexCount: asSafeNumber(raw.issuedUnits, 'Intex.issuedUnits'),
       callWindowDays: Math.round(Number(asBigint(raw.callWindow, 'Intex.callWindow')) / SECONDS_PER_DAY),
       callThresholdDays: Math.round(Number(asBigint(raw.callThreshold, 'Intex.callThreshold')) / SECONDS_PER_DAY),
       callPriceMinor: asBigint(raw.callPriceMinor, 'Intex.callPriceMinor'),
@@ -312,7 +312,6 @@ export class OutbeAuctionAdapter {
       issuanceCurrency: asSafeNumber(raw.issuanceCurrency, 'Intex.issuanceCurrency'),
       referenceCurrency: asSafeNumber(raw.referenceCurrency, 'Intex.referenceCurrency'),
       worldwideDay: String(asSafeNumber(raw.worldwideDay, 'Intex.worldwideDay')) as WorldwideDayKey,
-      costAmountMinor: raw.costAmountMinor === undefined ? 0n : asBigint(raw.costAmountMinor, 'Intex.costAmountMinor'),
     };
   }
 }

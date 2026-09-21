@@ -134,6 +134,40 @@ The following material must not be used to construct current typed data or selec
 
 Where those documents remain useful for their other topics, only their profile-specific examples are historical unless a later scoped decision says otherwise.
 
+## Protocol scales and gates at the pinned commit
+
+Reviewed against `blockchain/outbe-chain` at `d7c78459`. `config/abi/abi-pin.json` records that
+commit and `scripts/build/check-contract-profile.mjs` fails if the submodule advances past it, so a
+future bump forces this section to be revalidated.
+
+- **`promisLoadMinor` and the entry/floor/call prices are all `1e6`.** `IIntexNFT1155.SeriesData`
+  documents `promisLoadMinor` as PROMIS-units per Intex unit (1e6) and the three prices as ISO
+  stable-units (1e6); `contracts/precompiles/src/IIntex.sol` and `crates/core/intex/src/schema.rs`
+  agree. The app's `PRICE_SCALE` and `PROMIS_DECIMALS` follow this, not an older `1e9`/18 pair.
+- **The escrow lock is native-18, and the operation order is load-bearing.** `IntexAuction.sol`
+  computes `quantity * promisLoadMinor * bidRate / SCALE_1E6 * NATIVE_UNITS_PER_PROTOCOL_UNIT` with
+  the factor at `1e12`, truncating *before* the multiply. `(x / 1e6) * 1e12` differs from
+  `(x * 1e12) / 1e6` whenever `x % 1e6 != 0`, so reordering silently desyncs the approval from the
+  chain and from `Desis.rate_lock`. Pinned upstream by `test/foundry/cross-chain/LockAmountParity.t.sol`.
+  On uint128 overflow the BNB target reverts `BidAmountOverflow` while Outbe saturates; the app
+  simulates against the target and therefore rejects.
+- **`commitBid` is whitelist-gated; nothing else is.** `requireWhitelisted(_s().whitelist, msg.sender)`
+  guards only `commitBid`. A zero registry leaves the gate open by design. `IIntexAuction.whitelist()`
+  and `IWhitelist.isWhitelisted(address)` make a pre-signature eligibility check possible, so an
+  ineligible wallet is refused before it signs reveal material. Reveal, cancel and the claim paths
+  are ungated, so an already-committed bidder can always still reveal and recover.
+- **There is no separate no-split refund delay.** `EscrowAdapter` exposes only
+  `UNFINALIZED_REFUND_DELAY` (72h), `POST_FINALIZE_REFUND_DELAY` (72h) and
+  `COMMIT_BOND_ABANDON_DELAY` (30 days). `claimRefund` gates the finalized no-split case on
+  `finalizedAt + POST_FINALIZE_REFUND_DELAY`, returning the full principal with no burn — the same
+  gate as the split case, which burns `lockedAmount - failedRefund`.
+- **`IntexState.Expired` is derived on read, never stored.** `IntexNFT1155._effectiveState` returns
+  it once a `Called` series passes `calledAt + callNoticePeriod`, so a lifecycle decoder must accept
+  tag 3.
+- **An origin `*Sent` event does not prove dispatch.** `OriginRouter` emits it unconditionally at
+  every `_sendOrPark` site with `sendId == 0` on the parked path, so park state must be read from
+  `MessageParked` logs and recovered through the permissionless `resendParkedMessage(uint256)`.
+
 ## Authority and precedence
 
 Use the following precedence when sources disagree.

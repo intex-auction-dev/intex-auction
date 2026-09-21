@@ -6,6 +6,7 @@ import {
   bidderAccount,
   CHAIN_ID,
   DEPLOYMENT_PATH,
+  escrowLockNative,
   LOCAL_CONFIG_ROOT,
   operatorAccount,
   RPC_URL,
@@ -42,14 +43,18 @@ const escrowAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/Escr
 const nftAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/IntexNFT1155.json'), 'utf8'));
 const oracleAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/IOracle.json'), 'utf8'));
 const tokenAbi = JSON.parse(await readFile(resolve(LOCAL_CONFIG_ROOT, 'abi/ERC20.json'), 'utf8'));
+const targetRouterAbi = parseAbi([
+  'function bidsRelay(uint32 worldwideDay) view returns (uint16 nextBatch,uint16 totalBatches,bool done)',
+  'function relayBids(uint32 worldwideDay)',
+]);
 const controllerAbi = parseAbi([
   'function setGlobalAuctionStage(uint32 worldwideDay,uint8 stage)',
   'function startClearing(uint32 worldwideDay)',
   'function recordGlobalClearing(uint32 worldwideDay,uint32 issuedIntexCount,uint32 clearingRate,uint64 totalDemand,uint256 unusedPromis,bool reportUnused)',
   'function postAuctionResult(uint32 dstChainId,uint32 worldwideDay,uint32 issuedIntexCount,uint64 auctionClearingRate,uint32 wonBidsCount)',
   'function postRefundInstructions(uint32 dstChainId,uint32 worldwideDay,uint16 chunkIndex,uint16 totalChunks,address[] bidderAddresses,uint128[] refundedAmounts,uint128[] paidAmounts)',
-  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedIntexCount,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
-  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor) data)',
+  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedAt,uint32 issuedUnits,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
+  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits) data)',
   'function currencies(uint256 index) view returns (uint16)',
   'function bidsCount() view returns (uint256)',
   'function getBidsCount(uint32 worldwideDay) view returns (uint32)',
@@ -140,7 +145,7 @@ for (const [wallet, bid] of [
   [tryWallet, tryBid],
   [eurWallet, eurBid],
 ]) {
-  const lock = (BigInt(bid.quantity) * auction.params.promisLoadMinor * BigInt(bid.bidRate)) / RATE_SCALE;
+  const lock = escrowLockNative(bid.quantity, auction.params.promisLoadMinor, bid.bidRate);
   await write(wallet, deployment.wcoen, tokenAbi, 'approve', [
     deployment.escrowAdapter,
     auction.params.commitBondMinor + lock,
@@ -167,6 +172,16 @@ for (const [wallet, bid] of [
 
 await mineAt(Number(auction.schedule.revealEnd) + 1);
 await write(operator, deployment.controller, controllerAbi, 'startClearing', [day]);
+for (let round = 0; round < 8; round += 1) {
+  const relay = await publicClient.readContract({
+    address: deployment.targetRouter,
+    abi: targetRouterAbi,
+    functionName: 'bidsRelay',
+    args: [day],
+  });
+  if (relay[2]) break;
+  await write(operator, deployment.targetRouter, targetRouterAbi, 'relayBids', [day]);
+}
 // bidsCount() is the mock controller's cumulative `bidders.length` across every relay, so it
 // also counts the bids the seeded scenario created. Assert the per-day counter instead, and read
 // this day's currencies off the tail of the cumulative arrays.
@@ -231,7 +246,7 @@ const eurLock = await publicClient.readContract({
   functionName: 'getBidLock',
   args: [day, backgroundBidderAccount.address],
 });
-const paidPerWinner = (auction.params.promisLoadMinor * BigInt(clearingRate)) / RATE_SCALE;
+const paidPerWinner = escrowLockNative(1, auction.params.promisLoadMinor, clearingRate);
 await write(operator, deployment.controller, controllerAbi, 'postRefundInstructions', [
   CHAIN_ID,
   day,
@@ -257,7 +272,7 @@ const issue = async (seriesId, issuanceCurrency, recipient) => {
     promisLoadMinor: auction.params.promisLoadMinor,
     entryPriceMinor: row.entryPriceMinor,
     floorPriceMinor: row.floorPriceMinor,
-    issuedIntexCount: 1,
+    issuedUnits: 1,
     callWindow: auction.params.callTrigger.callWindow,
     callThreshold: auction.params.callTrigger.callThreshold,
     callPriceMinor: row.callPriceMinor,
@@ -268,7 +283,9 @@ const issue = async (seriesId, issuanceCurrency, recipient) => {
     issuanceCurrency,
     referenceCurrency: REFERENCE_CURRENCY,
     worldwideDay: day,
-    costAmountMinor: 0n,
+    settledUnits: 0,
+    exercisedUnits: 0,
+    gemFactoryUnits: 0,
   };
   await write(operator, deployment.controller, controllerAbi, 'setSeries', [series]);
   await write(operator, deployment.controller, controllerAbi, 'postIssuanceInstructions', [
@@ -277,7 +294,8 @@ const issue = async (seriesId, issuanceCurrency, recipient) => {
       {
         seriesId,
         worldwideDay: day,
-        issuedIntexCount: 1,
+        issuedAt,
+        issuedUnits: 1,
         promisLoadMinor: auction.params.promisLoadMinor,
         entryPriceMinor: row.entryPriceMinor,
         floorPriceMinor: row.floorPriceMinor,
@@ -318,13 +336,13 @@ const [daySeries, tryData, eurData, tryBalances, eurBalances] = await Promise.al
   publicClient.readContract({
     address: deployment.intexNFT1155,
     abi: nftAbi,
-    functionName: 'holderBalances',
+    functionName: 'ownerBalances',
     args: [TRY_SERIES, bidderAccount.address],
   }),
   publicClient.readContract({
     address: deployment.intexNFT1155,
     abi: nftAbi,
-    functionName: 'holderBalances',
+    functionName: 'ownerBalances',
     args: [EUR_SERIES, backgroundBidderAccount.address],
   }),
 ]);

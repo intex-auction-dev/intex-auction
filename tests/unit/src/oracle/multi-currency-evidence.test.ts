@@ -15,16 +15,16 @@ import {
 } from '@/oracle/multi-currency-evidence';
 import type { OracleConversions } from '@/oracle/oracle-conversions';
 
-const PRICE = 10n ** 9n; // 1e9 price scale (entry/floor/call, strike amounts)
+const PRICE = 10n ** 6n; // 1e6 price scale (entry/floor/call, strike amounts, promis load)
 const RATE = 10n ** 18n; // 1e18 Oracle rate / COEN minor scale
 
 describe('multi-currency bid evidence', () => {
-  it('pins the auction price scale to 1e9, distinct from the 1e18 Oracle rate scale', () => {
-    expect(formatPriceMinor9(1_000_000_000n)).toBe('1.00');
-    expect(formatPriceMinor9(1_080_000_000n)).toBe('1.08');
-    expect(formatPriceMinor9(2_280_000_000n)).toBe('2.28');
-    expect(formatOracleRate18(1_000_000_000n)).toBe('0.00');
-    expect(formatPriceMinor9(1_000_000_000_000_000_000n)).toBe('1,000,000,000.00');
+  it('pins the auction price scale to 1e6, distinct from the 1e18 Oracle rate scale', () => {
+    expect(formatPriceMinor9(1_000_000n)).toBe('1.00');
+    expect(formatPriceMinor9(1_080_000n)).toBe('1.08');
+    expect(formatPriceMinor9(2_280_000n)).toBe('2.28');
+    expect(formatOracleRate18(1_000_000n)).toBe('0.00');
+    expect(formatPriceMinor9(1_000_000_000_000_000_000n)).toBe('1,000,000,000,000.00');
   });
 
   it('prefers a stored selection, then TRY (949), then the reference currency, then first', () => {
@@ -79,7 +79,7 @@ describe('multi-currency bid evidence', () => {
         issuanceCurrency: 840,
         referenceCurrency: 840,
         referenceEntryPriceMinor: 2n * PRICE,
-        promisLoadMinor: 50_000n * RATE,
+        promisLoadMinor: 50_000n * PRICE,
       }),
     ).toEqual({
       issuanceCurrency: 840,
@@ -98,7 +98,7 @@ describe('multi-currency bid evidence', () => {
         issuanceCurrency: 949,
         referenceCurrency: 840,
         referenceEntryPriceMinor: 2n * PRICE,
-        promisLoadMinor: 50_000n * RATE,
+        promisLoadMinor: 50_000n * PRICE,
       }),
     ).toEqual({
       issuanceCurrency: 949,
@@ -126,7 +126,7 @@ describe('multi-currency bid evidence', () => {
         issuanceCurrency: 949,
         referenceCurrency: 840,
         referenceEntryPriceMinor: 2n * PRICE,
-        promisLoadMinor: 50_000n * RATE,
+        promisLoadMinor: 50_000n * PRICE,
       }),
     ).toEqual({
       issuanceCurrency: 949,
@@ -170,7 +170,7 @@ describe('multi-currency bid evidence', () => {
       issuanceCurrency: 949,
       referenceCurrency: 840,
       referenceEntryPriceMinor: 2n * PRICE,
-      promisLoadMinor: 50_000n * RATE,
+      promisLoadMinor: 50_000n * PRICE,
       conversions,
     });
     expect(result).toEqual({
@@ -181,10 +181,10 @@ describe('multi-currency bid evidence', () => {
     });
   });
 
-  it('derives the 1e9 cost of one Intex from a 1e9 entry price and 1e18 promis load', () => {
-    expect(deriveStrikeAmountMinor(1n * PRICE, 100_000n * RATE)).toBe(100_000n * PRICE);
-    expect(deriveStrikeAmountMinor(15n * PRICE, 100_000n * RATE)).toBe(1_500_000n * PRICE);
-    expect(deriveStrikeAmountMinor((92n * PRICE) / 100n, 100_000n * RATE)).toBe(92_000n * PRICE);
+  it('derives the 1e6 cost of one Intex from a 1e6 entry price and 1e6 promis load', () => {
+    expect(deriveStrikeAmountMinor(1n * PRICE, 100_000n * PRICE)).toBe(100_000n * PRICE);
+    expect(deriveStrikeAmountMinor(15n * PRICE, 100_000n * PRICE)).toBe(1_500_000n * PRICE);
+    expect(deriveStrikeAmountMinor((92n * PRICE) / 100n, 100_000n * PRICE)).toBe(92_000n * PRICE);
   });
 
   it('converts COEN equivalents without floating point', () => {
@@ -198,8 +198,8 @@ describe('multi-currency bid evidence', () => {
     expect(formatCurrencyMinor18(20_000_001_000_000_000_000n)).toBe('20.00');
     expect(formatCurrencyMinor18(1_234_560_000_000_000_000n)).toBe('1.23');
     expect(formatCurrencyMinor18(1_235_600_000_000_000_000n)).toBe('1.24');
-    expect(formatPriceMinor9(1_234_500_000n)).toBe('1.23');
-    expect(formatPriceMinor9(1_235_600_000n)).toBe('1.24');
+    expect(formatPriceMinor9(1_234_500n)).toBe('1.23');
+    expect(formatPriceMinor9(1_235_600n)).toBe('1.24');
   });
 
   it('resolves the live oracle rate, else lifts the 1e9 price fallback to the 1e18 rate scale', () => {
@@ -246,7 +246,7 @@ describe('multi-currency bid evidence', () => {
     expect(formatCoenCurrency(5_000n * RATE, 949, conversions, null)).toBe('Conversion unavailable');
   });
 
-  it('joins a COEN amount across currencies into one line with the 1e9 price fallback', () => {
+  it('joins a COEN amount across currencies into one line with the 1e6 price fallback', () => {
     const conversions: OracleConversions = {
       byIsoCode: new Map([
         [
@@ -276,7 +276,7 @@ describe('multi-currency bid evidence', () => {
     expect(
       formatCoenCurrencyLine(amount, conversions, [
         { isoCode: 840, contractFallback: 2n * PRICE },
-        { isoCode: 949, contractFallback: 1_500_000_000n },
+        { isoCode: 949, contractFallback: (3n * PRICE) / 2n },
       ]),
     ).toBe('10,000.00 USD · 7,500.00 TRY');
   });
@@ -326,8 +326,6 @@ describe('multi-currency bid evidence', () => {
         ],
       ]),
     };
-    expect(formatCurrencyCross(1_500_000n * RATE, 949, 840, withFallback, 30_000_000_000n, null)).toBe(
-      '100,000.00 USD',
-    );
+    expect(formatCurrencyCross(1_500_000n * RATE, 949, 840, withFallback, 30n * PRICE, null)).toBe('100,000.00 USD');
   });
 });

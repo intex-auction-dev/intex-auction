@@ -50,9 +50,9 @@ const seed = (name: string): void => {
 
 const controllerAbi = parseAbi([
   'function postRefundInstructions(uint32 dstChainId,uint32 worldwideDay,uint16 chunkIndex,uint16 totalChunks,address[] bidderAddresses,uint128[] refundedAmounts,uint128[] paidAmounts)',
-  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedIntexCount,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
+  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedAt,uint32 issuedUnits,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
   'function markQualified(bytes14 seriesId,uint32 worldwideDay)',
-  'function seriesData(bytes14 seriesId) view returns ((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor))',
+  'function seriesData(bytes14 seriesId) view returns ((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits))',
 ]);
 const escrowReadAbi = parseAbi([
   'function getBidLock(uint32 worldwideDay,address bidder) view returns ((uint128 lockedAmount,uint32 lockedAt,uint8 status,uint128 failedRefund,bool splitRecorded))',
@@ -139,7 +139,8 @@ const issuanceParams = (input: {
     {
       seriesId: sid(input.worldwideDay),
       worldwideDay: input.worldwideDay,
-      issuedIntexCount: input.auction.result.issuedIntexCount,
+      issuedAt: Number(input.auction.schedule.revealEnd),
+      issuedUnits: input.auction.result.issuedIntexCount,
       promisLoadMinor: input.auction.params.promisLoadMinor,
       entryPriceMinor: first.entryPriceMinor,
       floorPriceMinor: first.floorPriceMinor,

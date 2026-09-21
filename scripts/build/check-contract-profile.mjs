@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +8,22 @@ const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 const readText = (path) => readFile(resolve(ROOT, path), 'utf8');
 const readAbi = async (path) => JSON.parse(await readText(path));
+
+const assertAbiPinMatchesSubmodule = async () => {
+  const pin = JSON.parse(await readText('config/abi/abi-pin.json'));
+  const head = execFileSync('git', ['-C', 'blockchain/outbe-chain', 'rev-parse', 'HEAD'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  }).trim();
+  assert.equal(
+    head,
+    pin.outbeChainCommit,
+    `blockchain/outbe-chain is at ${head} but config/abi/abi-pin.json records ${pin.outbeChainCommit}. ` +
+      'Re-run the contract divergence review against the new commit, then update abi-pin.json.',
+  );
+};
+
+await assertAbiPinMatchesSubmodule();
 
 const canonicalType = (input) => {
   if (!input.type.startsWith('tuple')) return input.type;
@@ -44,16 +61,22 @@ const checks = [
       'AuctionCleared(uint32,uint32,uint32,uint64)',
       'AuctionClearedEmpty(uint32,uint64)',
       'UnusedSupplyReported(uint32,uint256)',
+      'AuctionCancelledUnpriced(uint32)',
     ],
   },
   {
     abi: 'config/abi/OriginRouter.json',
     source: 'blockchain/outbe-chain/contracts/intex/src/origin/interfaces/IOriginRouter.sol',
-    functions: ['targetsOf(uint32)', 'parkedSend(uint256)', 'parkedProceeds(uint256)'],
+    functions: [
+      'targetsOf(uint32)',
+      'parkedMessage(uint256)',
+      'resendParkedMessage(uint256)',
+      'parkedProceeds(uint256)',
+    ],
     events: [
       'BidsDoneReceived(uint32,uint32,uint16,uint32)',
-      'SendParked(uint256,uint32,uint8)',
-      'PendingSendFlushed(uint256,uint32,bytes32)',
+      'MessageParked(uint256,uint32,uint8)',
+      'ParkedMessageResent(uint256,uint32,bytes32)',
     ],
   },
   {
@@ -61,11 +84,9 @@ const checks = [
     source: 'blockchain/outbe-chain/contracts/precompiles/src/IOracle.sol',
     functions: [
       'getExchangeRate(address,address)',
-      'getCurrencyRate(uint16)',
       'getCoenExchangeRateFor(uint16)',
       'getPriceSnapshotHistory(address,address,uint32)',
       'getDayVwap(address,address)',
-      'getUtcDayVwap(address,address,uint32)',
       'getWorldwideDayVwapSnapshot(uint32)',
       'getReferenceCurrencies()',
     ],
@@ -83,19 +104,15 @@ const checks = [
     functions: [],
     events: [
       'BidsDoneSent(bytes32,uint32,uint16,uint32)',
-      'IssuanceMintDeferred(uint256,bytes14,address,bytes)',
-      'IssuanceMintFlushed(uint256,bytes14)',
+      'IssuanceParked(uint256,bytes14,address,bytes)',
+      'ParkedIssuanceApplied(uint256,bytes14)',
     ],
   },
   {
     abi: 'config/abi/EscrowAdapter.json',
     source: 'blockchain/outbe-chain/contracts/intex/src/target/interfaces/IEscrowAdapter.sol',
     functions: [],
-    events: [
-      'BidderRefundFailed(bytes32,uint32,address,bytes)',
-      'BidderRetried(bytes32,uint32,address,uint128,uint128)',
-      'FinalizationNoOp(uint32,uint32)',
-    ],
+    events: ['BidderRefundFailed(bytes32,uint32,address,bytes)', 'FinalizationNoOp(uint32,uint32)'],
   },
 ];
 
@@ -125,19 +142,41 @@ for (const check of checks) {
 const nftAbi = await readAbi('config/abi/IntexNFT1155.json');
 for (const signature of [
   'getSeriesPaginated(uint256,uint256)',
-  'getOwnedSeriesWithBalancesPaginated(address,uint256,uint256)',
+  'ownerBalances(bytes14,address)',
+  'balanceOfBatch(address[],uint256[])',
 ]) {
   assert.ok(
     nftAbi.some((item) => item.type === 'function' && signatureOf(item) === signature),
     `config/abi/IntexNFT1155.json lacks function ${signature}`,
   );
 }
-for (const forbidden of ['expireSeries', 'SeriesExpired', 'SeriesExpiredProgress']) {
-  assert.equal(
-    nftAbi.some((item) => item.name === forbidden),
-    false,
-    `config/abi/IntexNFT1155.json still exposes obsolete ${forbidden}`,
-  );
+const forbiddenByAbi = {
+  'config/abi/IntexNFT1155.json': [
+    'expireSeries',
+    'SeriesExpired',
+    'SeriesExpiredProgress',
+    'holderBalances',
+    'getAuctionWonCount',
+    'getOwnedSeriesWithBalances',
+    'getOwnedSeriesWithBalancesPaginated',
+    'getIssuedHoldersWithBalances',
+    'SYSTEM_RELAYER_ROLE',
+  ],
+  'config/abi/EscrowAdapter.json': ['NO_SPLIT_REFUND_DELAY', 'BidderRetried', 'SplitNotRecorded', 'NotFinalizedYet'],
+  'config/abi/IOracle.json': ['getCurrencyRate'],
+  'config/abi/TargetRouter.json': ['pendingBidsRelays', 'IssuanceMintDeferred', 'IssuanceMintFlushed'],
+  'config/abi/OriginRouter.json': ['parkedSend', 'SendParked', 'PendingSendFlushed'],
+};
+
+for (const [abiPath, forbidden] of Object.entries(forbiddenByAbi)) {
+  const abi = await readAbi(abiPath);
+  for (const name of forbidden) {
+    assert.equal(
+      abi.some((item) => item.name === name),
+      false,
+      `${abiPath} still exposes obsolete ${name}`,
+    );
+  }
 }
 
 console.log('Reviewed contract ABI profile matches required source selectors and events.');

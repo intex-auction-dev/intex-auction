@@ -50,8 +50,6 @@ export interface BidderCompletionEvidence {
   lock: VenueBidLockState;
   recoveredAmount: bigint | null;
   burnedAmount: bigint | null;
-  exactRetriedRefund: bigint | null;
-  exactRetriedPaid: bigint | null;
 }
 
 export interface PortfolioTokenRow {
@@ -211,18 +209,18 @@ export class CompletionVenueAdapter {
   }
 
   async readRecipientEvidence(seriesId: Hex, wallet: Address): Promise<RecipientSeriesEvidence> {
-    const [instructions, deferredLogs, flushedLogs, issuedLogs, wonRaw, balancesRaw] = await Promise.all([
+    const [instructions, parkedLogs, appliedLogs, issuedLogs, balancesRaw, tokenIdsRaw] = await Promise.all([
       this.scanEvent(
         this.profile.addresses.targetRouter,
         this.profile.abis.targetRouter,
         'IssuanceInstructionsReceived',
         { seriesId },
       ),
-      this.scanEvent(this.profile.addresses.targetRouter, this.profile.abis.targetRouter, 'IssuanceMintDeferred', {
+      this.scanEvent(this.profile.addresses.targetRouter, this.profile.abis.targetRouter, 'IssuanceParked', {
         seriesId,
         recipient: wallet,
       }),
-      this.scanEvent(this.profile.addresses.targetRouter, this.profile.abis.targetRouter, 'IssuanceMintFlushed', {
+      this.scanEvent(this.profile.addresses.targetRouter, this.profile.abis.targetRouter, 'ParkedIssuanceApplied', {
         seriesId,
       }),
       this.scanEvent(this.profile.addresses.intexNFT1155, this.profile.abis.intexNFT1155, 'IntexIssued', {
@@ -231,54 +229,51 @@ export class CompletionVenueAdapter {
       this.client.readContract({
         address: this.profile.addresses.intexNFT1155,
         abi: this.profile.abis.intexNFT1155,
-        functionName: 'getAuctionWonCount',
+        functionName: 'ownerBalances',
         args: [seriesId, wallet],
       }),
       this.client.readContract({
         address: this.profile.addresses.intexNFT1155,
         abi: this.profile.abis.intexNFT1155,
-        functionName: 'holderBalances',
-        args: [seriesId, wallet],
+        functionName: 'tokenIds',
+        args: [seriesId],
       }),
     ]);
-    const deferredIndices = new Set(
-      deferredLogs.map((log, index) =>
-        asUnsignedBigint(logArgs(log, `deferred log ${index}`).idx, 'deferred index').toString(),
+    const parkedIndices = new Set(
+      parkedLogs.map((log, index) =>
+        asUnsignedBigint(logArgs(log, `parked log ${index}`).idx, 'parked index').toString(),
       ),
     );
-    for (const [index, log] of flushedLogs.entries()) {
-      deferredIndices.delete(asUnsignedBigint(logArgs(log, `flushed log ${index}`).idx, 'flushed index').toString());
+    for (const [index, log] of appliedLogs.entries()) {
+      parkedIndices.delete(asUnsignedBigint(logArgs(log, `applied log ${index}`).idx, 'applied index').toString());
     }
-    const tokenIdsRaw = await this.client.readContract({
-      address: this.profile.addresses.intexNFT1155,
-      abi: this.profile.abis.intexNFT1155,
-      functionName: 'tokenIds',
-      args: [seriesId],
-    });
-    const issuedTokenId = tupleValue(tokenIdsRaw, 'issued', 0, 'IntexNFT1155.tokenIds');
-    const deliveredEvent = issuedLogs.some((log, index) => {
+    const issuedTokenId = asUnsignedBigint(
+      tupleValue(tokenIdsRaw, 'issued', 0, 'IntexNFT1155.tokenIds'),
+      'series issued token id',
+    );
+    const wonCount = issuedLogs.reduce<bigint>((sum, log, index) => {
       const args = logArgs(log, `issued log ${index}`);
-      return (
-        sameAddress(args.to, wallet) &&
-        asUnsignedBigint(args.tokenId, 'issued token id') === asUnsignedBigint(issuedTokenId, 'series issued token id')
-      );
-    });
+      if (!sameAddress(args.to, wallet)) return sum;
+      if (asUnsignedBigint(args.tokenId, 'issued token id') !== issuedTokenId) return sum;
+      return sum + asUnsignedBigint(args.quantity, 'issued quantity');
+    }, 0n);
+    const deliveredEvent = wonCount > 0n;
     return {
       seriesId,
       issuanceInstructionsReceived: instructions.length > 0,
-      deferred: deferredIndices.size > 0,
+      deferred: parkedIndices.size > 0,
       deliveredEvent,
-      wonCount: asUnsignedBigint(wonRaw, 'auction won count'),
-      currentIssuedBalance: asUnsignedBigint(tupleValue(balancesRaw, 'issued', 0, 'holder balances'), 'issued balance'),
+      wonCount,
+      currentIssuedBalance: asUnsignedBigint(tupleValue(balancesRaw, 'issued', 0, 'owner balances'), 'issued balance'),
       currentSettledBalance: asUnsignedBigint(
-        tupleValue(balancesRaw, 'settled', 1, 'holder balances'),
+        tupleValue(balancesRaw, 'settled', 1, 'owner balances'),
         'settled balance',
       ),
     };
   }
 
   async readBidderCompletion(worldwideDay: WorldwideDayKey, wallet: Address): Promise<BidderCompletionEvidence> {
-    const [lockRaw, refunds, burns, retries] = await Promise.all([
+    const [lockRaw, refunds, burns] = await Promise.all([
       this.client.readContract({
         address: this.profile.addresses.escrowAdapter,
         abi: this.profile.abis.escrowAdapter,
@@ -293,10 +288,6 @@ export class CompletionVenueAdapter {
         worldwideDay: Number(worldwideDay),
         bidder: wallet,
       }),
-      this.scanEvent(this.profile.addresses.escrowAdapter, this.profile.abis.escrowAdapter, 'BidderRetried', {
-        worldwideDay: Number(worldwideDay),
-        bidder: wallet,
-      }),
     ]);
     const recoveryRefunds = refunds.reduce<bigint>((sum, log, index) => {
       const args = logArgs(log, `refund log ${index}`);
@@ -308,14 +299,10 @@ export class CompletionVenueAdapter {
       (sum, log, index) => sum + asUnsignedBigint(logArgs(log, `burn log ${index}`).amount, 'burn amount'),
       0n,
     );
-    const retry = retries.at(-1);
-    const retryArgs = retry ? logArgs(retry, 'latest retry log') : null;
     return {
       lock: decodeVenueBidLock(lockRaw),
       recoveredAmount: recoveryRefunds > 0n ? recoveryRefunds : null,
       burnedAmount: burnedAmount > 0n ? burnedAmount : null,
-      exactRetriedRefund: retryArgs ? asUnsignedBigint(retryArgs.refundedAmount, 'retried refund') : null,
-      exactRetriedPaid: retryArgs ? asUnsignedBigint(retryArgs.paidAmount, 'retried paid amount') : null,
     };
   }
 
@@ -391,36 +378,31 @@ export class CompletionVenueAdapter {
 
     const tokenMap = new Map<string, { seriesId: Hex; tokenStatus: IntexTokenStatus }>();
     const targetBySeries = new Map<Hex, TargetSeriesSnapshot>();
+    const knownTokenIds: bigint[] = [];
     for (const issuedToken of allSeriesTokenIds) {
       const seriesId = asBytes(`0x${issuedToken.toString(16).padStart(28, '0')}`, 14, 'target series id');
       const series = await this.readTargetSeries(seriesId);
       targetBySeries.set(seriesId, series);
       tokenMap.set(series.issuedTokenId.toString(), { seriesId, tokenStatus: 'issued' });
       tokenMap.set(series.settledTokenId.toString(), { seriesId, tokenStatus: 'settled' });
+      knownTokenIds.push(series.issuedTokenId, series.settledTokenId);
     }
 
     const owned: Array<{ tokenId: bigint; balance: bigint }> = [];
-    let totalOwned: bigint | null = null;
-    for (let offset = 0n; totalOwned === null || offset < totalOwned; offset += BigInt(pageSize)) {
-      const raw = await this.client.readContract({
-        address: this.profile.addresses.intexNFT1155,
-        abi: this.profile.abis.intexNFT1155,
-        functionName: 'getOwnedSeriesWithBalancesPaginated',
-        args: [wallet, offset, pageSize],
-      });
-      const ids = asArray(tupleValue(raw, 'ownedTokenIds', 0, 'owned token page'), 'owned token ids');
-      const balances = asArray(tupleValue(raw, 'balances', 1, 'owned token page'), 'owned balances');
-      const total = asUnsignedBigint(tupleValue(raw, 'total', 2, 'owned token page'), 'owned total');
-      if (ids.length !== balances.length) throw new TypeError('Owned token ids and balances differ in length.');
-      if (totalOwned !== null && total !== totalOwned)
-        throw new TypeError('Owned token total changed during pagination.');
-      totalOwned = total;
-      if (ids.length === 0 && offset < total) throw new TypeError('Owned token pagination ended before total.');
-      ids.forEach((id, index) => {
-        owned.push({
-          tokenId: asUnsignedBigint(id, `owned token ${index}`),
-          balance: asUnsignedBigint(balances[index], `owned balance ${index}`),
-        });
+    for (let offset = 0; offset < knownTokenIds.length; offset += pageSize) {
+      const ids = knownTokenIds.slice(offset, offset + pageSize);
+      const balances = asArray(
+        await this.client.readContract({
+          address: this.profile.addresses.intexNFT1155,
+          abi: this.profile.abis.intexNFT1155,
+          functionName: 'balanceOfBatch',
+          args: [ids.map(() => wallet), ids],
+        }),
+        'owned balances',
+      );
+      if (balances.length !== ids.length) throw new TypeError('balanceOfBatch returned a mismatched balance count.');
+      ids.forEach((tokenId, index) => {
+        owned.push({ tokenId, balance: asUnsignedBigint(balances[index], `owned balance ${index}`) });
       });
     }
 

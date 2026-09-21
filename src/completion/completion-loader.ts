@@ -83,6 +83,7 @@ const lifecycleRank: Readonly<Record<IntexLifecycle, number>> = {
   issued: 0,
   qualified: 1,
   called: 2,
+  expired: 3,
 };
 
 const PAYMENT_TOKEN_SYMBOL_FALLBACK = 'wCOEN';
@@ -196,10 +197,6 @@ export const loadAuctionCompletion = async (
 
   let bidderEconomics: BidderEconomics | null = null;
   if (bidder) {
-    const exact =
-      bidder.exactRetriedRefund !== null && bidder.exactRetriedPaid !== null
-        ? { exactRefundedAmount: bidder.exactRetriedRefund, exactPaidAmount: bidder.exactRetriedPaid }
-        : {};
     const recovery = {
       ...(bidder.recoveredAmount !== null ? { recoveredAmount: bidder.recoveredAmount } : {}),
       ...(bidder.burnedAmount !== null ? { burnedAmount: bidder.burnedAmount } : {}),
@@ -214,7 +211,6 @@ export const loadAuctionCompletion = async (
         issuanceInstructionsReceived: combinedRecipient.issuanceInstructionsReceived,
         deliveryDeferred: combinedRecipient.deferred,
         deliveryObserved: combinedRecipient.deliveredEvent,
-        ...exact,
         ...recovery,
       });
     } else if (result === 'no-sale') {
@@ -228,7 +224,6 @@ export const loadAuctionCompletion = async (
         issuanceInstructionsReceived: false,
         deliveryDeferred: false,
         deliveryObserved: false,
-        ...exact,
         ...recovery,
       });
     } else if (bidder.lock.status === 'none') {

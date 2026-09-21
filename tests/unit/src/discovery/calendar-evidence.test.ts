@@ -49,6 +49,7 @@ const originAbi = parseAbi([
   'event WorldwideDayCleanedUp(uint32 indexed worldwideDay,uint8 finalStatus)',
   'event AuctionCreated(uint32 indexed worldwideDay)',
   'event AuctionCancelledRedDay(uint32 indexed worldwideDay)',
+  'event AuctionCancelledUnpriced(uint32 indexed worldwideDay)',
   'event AuctionOverdue(uint32 indexed worldwideDay)',
   'event AuctionCleared(uint32 indexed worldwideDay,uint32 issuedIntexCount,uint32 clearingRate,uint64 totalDemand)',
   'event AuctionClearedEmpty(uint32 indexed worldwideDay,uint64 totalDemand)',
@@ -56,8 +57,8 @@ const originAbi = parseAbi([
   'event ChainSkipped(uint32 indexed worldwideDay,uint32 indexed srcChainId)',
   'event AuctionStageSent(bytes32 indexed sendId,uint32 indexed worldwideDay,uint8 stageType)',
   'event AuctionResultSent(bytes32 indexed sendId,uint32 indexed worldwideDay,uint32 issuedIntexCount,uint64 clearingRate)',
-  'event SendParked(uint256 indexed idx,uint32 indexed dstChainId,uint8 msgType)',
-  'event PendingSendFlushed(uint256 indexed idx,uint32 indexed dstChainId,bytes32 sendId)',
+  'event MessageParked(uint256 indexed idx,uint32 indexed dstChainId,uint8 msgType)',
+  'event ParkedMessageResent(uint256 indexed idx,uint32 indexed dstChainId,bytes32 sendId)',
 ]);
 
 const venueAbi = parseAbi([
@@ -94,10 +95,10 @@ class LogClient implements AuctionReadClient {
     functionName: string;
     args?: readonly unknown[];
   }): Promise<unknown> {
-    if (request.functionName === 'parkedSend') {
+    if (request.functionName === 'parkedMessage') {
       const index = request.args?.[0];
       const value = this.parked.get(String(index));
-      if (value === undefined) throw new Error(`Missing parked send ${String(index)}`);
+      if (value === undefined) throw new Error(`Missing parked message ${String(index)}`);
       return value;
     }
     throw new Error(`Unexpected read ${request.functionName}`);
@@ -313,13 +314,13 @@ describe('Phase 4 calendar evidence', () => {
       ['AuctionClearedEmpty', [log({ worldwideDay: Number(noSale), totalDemand: 3 }, TX_C, 13)]],
       ['ChainSkipped', [log({ worldwideDay: Number(skipped), srcChainId: 31337 })]],
       [
-        'SendParked',
+        'MessageParked',
         [
           log({ idx: 1n, dstChainId: 31337, msgType: 5 }, TX_A, 20),
           log({ idx: 2n, dstChainId: 31337, msgType: 5 }, TX_B, 21),
         ],
       ],
-      ['PendingSendFlushed', [log({ idx: 2n, dstChainId: 31337, sendId: `0x${'1'.repeat(64)}` }, TX_B, 22)]],
+      ['ParkedMessageResent', [log({ idx: 2n, dstChainId: 31337, sendId: `0x${'1'.repeat(64)}` }, TX_B, 22)]],
     ]);
     const venueLogs = new Map<string, readonly unknown[]>([
       ['AuctionStageReceived', [log({ srcChainId: 31337, worldwideDay: Number(partial), stageType: 3 })]],
@@ -479,14 +480,14 @@ describe('Phase 4 calendar evidence', () => {
         [parkedDay, flushedDay, malformedDay].map((day, index) => log({ worldwideDay: Number(day) }, TX_A, index)),
       ],
       [
-        'SendParked',
+        'MessageParked',
         [
           log({ idx: 1n, dstChainId: 31337, msgType: 3 }, TX_A, 20),
           log({ idx: 2n, dstChainId: 31337, msgType: 3 }, TX_B, 21),
           log({ idx: 3n, dstChainId: 31337, msgType: 3 }, TX_C, 22),
         ],
       ],
-      ['PendingSendFlushed', [log({ idx: 2n, dstChainId: 31337, sendId: `0x${'1'.repeat(64)}` }, TX_B, 23)]],
+      ['ParkedMessageResent', [log({ idx: 2n, dstChainId: 31337, sendId: `0x${'1'.repeat(64)}` }, TX_B, 23)]],
     ]);
     const originClient = new LogClient(
       originLogs,
@@ -818,5 +819,216 @@ describe('Phase 4 calendar evidence', () => {
     expect(cell?.canonicalSeries).toBeNull();
     expect(cell?.globalAuction.offeredQuantityEvidence).toBe('unavailable');
     expect(canonicalSeriesReads).toBe(0);
+  });
+
+  it('classifies a leg with both a MessageParked and a *Sent event as parked, never dispatched (D3)', async () => {
+    const parkedResult = wwd('20260804');
+    const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
+
+    const originLogs = new Map<string, readonly unknown[]>([
+      ['AuctionCreated', [log({ worldwideDay: Number(parkedResult) })]],
+      [
+        'AuctionResultSent',
+        [
+          log(
+            { sendId: `0x${'0'.repeat(64)}`, worldwideDay: Number(parkedResult), issuedIntexCount: 0, clearingRate: 0 },
+            TX_A,
+            30,
+          ),
+        ],
+      ],
+      ['MessageParked', [log({ idx: 7n, dstChainId: 31337, msgType: 5 }, TX_A, 31)]],
+    ]);
+    const originClient = new LogClient(
+      originLogs,
+      new Map([['7', { dstChainId: 31337, gasLimit: 1n, sent: false, payload: resultPayload(parkedResult) }]]),
+    );
+    const venueClient = new LogClient(new Map());
+
+    const readers: CalendarRangeReaders = {
+      originClient,
+      venueClient,
+      originAdapter: {
+        validateDeployment: async () => undefined,
+        readRetainedWorldwideDays: async () => [parkedResult],
+        readWorldwideDay: async (day) =>
+          day === parkedResult
+            ? snapshot(day, 'completed', 'green')
+            : Promise.reject(new OriginWorldwideDayNotFoundError('missing')),
+        readWorldwideDayState: async () => {
+          throw new Error('not used');
+        },
+        readTerminalEvidence: async () => null,
+        readGlobalAuction: async () => globalSnapshot({ stage: 'started' }),
+        readCanonicalSeries: async () => null,
+      },
+      venueAdapter: {
+        validateDeployment: async () => undefined,
+        readAuction: async () => {
+          throw new VenueAuctionNotFoundError('missing');
+        },
+      },
+    };
+
+    const result = await loadCalendarRangeWithReaders(originProfile(), venueProfile(), readers, days);
+    const cell = result.days.find((day) => day.worldwideDay === parkedResult);
+    expect(cell?.originDelivery.result).toBe('parked');
+    expect(cell?.originDelivery.result).not.toBe('dispatched');
+  });
+
+  it('calls parkedMessage (not parkedSend) and decodes the tuple positionally (B1)', async () => {
+    const parkedDay = wwd('20260804');
+    const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
+    const functionCalls: string[] = [];
+
+    const originLogs = new Map<string, readonly unknown[]>([
+      ['AuctionCreated', [log({ worldwideDay: Number(parkedDay) })]],
+      ['MessageParked', [log({ idx: 4n, dstChainId: 31337, msgType: 5 }, TX_A, 40)]],
+    ]);
+    const positionalTuple = [31337, 1n, false, resultPayload(parkedDay)];
+    class RecordingClient extends LogClient {
+      override async readContract(request: {
+        address: Address;
+        abi: Abi;
+        functionName: string;
+        args?: readonly unknown[];
+      }): Promise<unknown> {
+        functionCalls.push(request.functionName);
+        if (request.functionName === 'parkedMessage') return positionalTuple;
+        throw new Error(`Unexpected read ${request.functionName}`);
+      }
+    }
+    const originClient = new RecordingClient(originLogs);
+    const venueClient = new LogClient(new Map());
+
+    const readers: CalendarRangeReaders = {
+      originClient,
+      venueClient,
+      originAdapter: {
+        validateDeployment: async () => undefined,
+        readRetainedWorldwideDays: async () => [parkedDay],
+        readWorldwideDay: async (day) =>
+          day === parkedDay
+            ? snapshot(day, 'completed', 'green')
+            : Promise.reject(new OriginWorldwideDayNotFoundError('missing')),
+        readWorldwideDayState: async () => {
+          throw new Error('not used');
+        },
+        readTerminalEvidence: async () => null,
+        readGlobalAuction: async () => globalSnapshot({ stage: 'started' }),
+        readCanonicalSeries: async () => null,
+      },
+      venueAdapter: {
+        validateDeployment: async () => undefined,
+        readAuction: async () => {
+          throw new VenueAuctionNotFoundError('missing');
+        },
+      },
+    };
+
+    const result = await loadCalendarRangeWithReaders(originProfile(), venueProfile(), readers, days);
+    const cell = result.days.find((day) => day.worldwideDay === parkedDay);
+    expect(functionCalls).toContain('parkedMessage');
+    expect(functionCalls).not.toContain('parkedSend');
+    expect(cell?.originDelivery.result).toBe('parked');
+    expect(cell?.failures.some((failure) => failure.authority === 'origin-router')).toBe(false);
+  });
+
+  it('marks an AuctionCancelledUnpriced day cancelled and not active, without claiming a red day type (F2)', async () => {
+    const unpriced = wwd('20260804');
+    const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
+
+    const originLogs = new Map<string, readonly unknown[]>([
+      ['AuctionCreated', [log({ worldwideDay: Number(unpriced) })]],
+      ['AuctionCancelledUnpriced', [log({ worldwideDay: Number(unpriced) })]],
+    ]);
+    const originClient = new LogClient(originLogs);
+    const venueClient = new LogClient(new Map());
+
+    const readers: CalendarRangeReaders = {
+      originClient,
+      venueClient,
+      originAdapter: {
+        validateDeployment: async () => undefined,
+        readRetainedWorldwideDays: async () => [unpriced],
+        readWorldwideDay: async (day) =>
+          day === unpriced
+            ? snapshot(day, 'completed', 'green')
+            : Promise.reject(new OriginWorldwideDayNotFoundError('missing')),
+        readWorldwideDayState: async () => {
+          throw new Error('not used');
+        },
+        readTerminalEvidence: async () => null,
+        readGlobalAuction: async () => globalSnapshot({ stage: 'started' }),
+        readCanonicalSeries: async () => null,
+      },
+      venueAdapter: {
+        validateDeployment: async () => undefined,
+        readAuction: async () => {
+          throw new VenueAuctionNotFoundError('missing');
+        },
+      },
+    };
+
+    const result = await loadCalendarRangeWithReaders(originProfile(), venueProfile(), readers, days);
+    const cell = result.days.find((day) => day.worldwideDay === unpriced);
+    expect(cell?.globalAuction.terminalDisposition).toBe('cancelled-unpriced');
+    expect(cell?.globalAuction.terminalDisposition).not.toBe('active');
+    expect(cell?.globalAuction.terminalDisposition).not.toBe('cancelled-red');
+    expect(cell?.dayType).toBe('green');
+  });
+
+  it('ranks a re-flushed leg above the earlier parked evidence for the same result leg (mergeDelivery rank)', async () => {
+    const reflushed = wwd('20260804');
+    const days = contiguousWorldwideDayWindow(wwd('20260701'), 90);
+
+    const originLogs = new Map<string, readonly unknown[]>([
+      ['AuctionCreated', [log({ worldwideDay: Number(reflushed) })]],
+      [
+        'MessageParked',
+        [
+          log({ idx: 1n, dstChainId: 31337, msgType: 5 }, TX_A, 50),
+          log({ idx: 2n, dstChainId: 31337, msgType: 5 }, TX_B, 51),
+        ],
+      ],
+    ]);
+    const originClient = new LogClient(
+      originLogs,
+      new Map([
+        ['1', { dstChainId: 31337, gasLimit: 1n, sent: false, payload: resultPayload(reflushed) }],
+        ['2', { dstChainId: 31337, gasLimit: 1n, sent: true, payload: resultPayload(reflushed) }],
+      ]),
+    );
+    const venueClient = new LogClient(new Map());
+
+    const readers: CalendarRangeReaders = {
+      originClient,
+      venueClient,
+      originAdapter: {
+        validateDeployment: async () => undefined,
+        readRetainedWorldwideDays: async () => [reflushed],
+        readWorldwideDay: async (day) =>
+          day === reflushed
+            ? snapshot(day, 'completed', 'green')
+            : Promise.reject(new OriginWorldwideDayNotFoundError('missing')),
+        readWorldwideDayState: async () => {
+          throw new Error('not used');
+        },
+        readTerminalEvidence: async () => null,
+        readGlobalAuction: async () => globalSnapshot({ stage: 'started' }),
+        readCanonicalSeries: async () => null,
+      },
+      venueAdapter: {
+        validateDeployment: async () => undefined,
+        readAuction: async () => {
+          throw new VenueAuctionNotFoundError('missing');
+        },
+      },
+    };
+
+    const result = await loadCalendarRangeWithReaders(originProfile(), venueProfile(), readers, days);
+    const cell = result.days.find((day) => day.worldwideDay === reflushed);
+    expect(cell?.originDelivery.result).toBe('flushed');
+    expect(cell?.originDelivery.result).not.toBe('parked');
   });
 });

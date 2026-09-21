@@ -23,7 +23,6 @@ export type WalletRecoveryEventFamily =
   | 'ProceedsBurned'
   | 'AuctionEscrowFinalized'
   | 'BidderRefundFailed'
-  | 'BidderRetried'
   | 'FinalizationNoOp'
   | 'Wired';
 
@@ -129,7 +128,6 @@ const ESCROW_EVENTS: readonly EventSpec[] = [
   { family: 'ProceedsBurned', source: 'escrow', walletFiltered: true },
   { family: 'AuctionEscrowFinalized', source: 'escrow', walletFiltered: false },
   { family: 'BidderRefundFailed', source: 'escrow', walletFiltered: true },
-  { family: 'BidderRetried', source: 'escrow', walletFiltered: true },
   { family: 'FinalizationNoOp', source: 'escrow', walletFiltered: false },
   { family: 'Wired', source: 'escrow', walletFiltered: false },
 ];
@@ -523,11 +521,6 @@ const validateEscrows = async (input: {
             address: escrow,
             abi: input.profile.abis.escrowAdapter,
             functionName: 'POST_FINALIZE_REFUND_DELAY',
-          }),
-          input.client.readContract({
-            address: escrow,
-            abi: input.profile.abis.escrowAdapter,
-            functionName: 'NO_SPLIT_REFUND_DELAY',
           }),
         ]);
         const matchingEpochs = input.epochs.filter((epoch) => getAddress(epoch.escrowContract) === getAddress(escrow));
