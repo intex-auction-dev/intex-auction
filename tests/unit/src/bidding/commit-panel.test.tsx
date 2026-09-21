@@ -24,12 +24,10 @@ import {
 } from '@/bidding/commit-panel';
 
 describe('commit action rail presentation', () => {
-  it('labels the bid rate as a percentage of the escrow basis, never of strike', () => {
+  it('labels the bid rate as a percentage of strike on the primary auction UI only', () => {
     expect(commitFormCopy.quantityHint(2)).toBe('Min – 2 Intexes.');
-    expect(commitFormCopy.bidRateHint(50_000)).toBe('Percent of escrow basis. Min – 5%.');
-    expect(commitFormCopy.bidRate(50_000)).toBe('5% of escrow basis');
-    expect(commitFormCopy.bidRateHint(50_000).toLowerCase()).not.toContain('strike');
-    expect(commitFormCopy.bidRate(50_000).toLowerCase()).not.toContain('strike');
+    expect(commitFormCopy.bidRateHint(50_000)).toBe('Percent of strike. Min – 5%.');
+    expect(commitFormCopy.bidRate(50_000)).toBe('5% of strike');
     expect(commitFormCopy.bond('Œ100')).toBe('Committing locks a refundable Œ100 bond.');
     expect(formatPaymentTokenAmount(100_000_000n * 10n ** 18n, 18, 'WCOEN')).toBe('Œ100,000,000');
     expect(formatPromisAmount(100_000n * 10n ** 6n)).toBe('100,000');
@@ -60,7 +58,7 @@ describe('commit action rail presentation', () => {
       <CommitBidDetails
         rows={[
           { label: 'Quantity', value: '10 Intexes', detail: '1,000,000 Promis' },
-          { label: 'Bid rate', value: '5% of escrow basis' },
+          { label: 'Bid rate', value: '5% of strike' },
           { label: 'Bid amount per Intex', value: 'Œ5,000', detail: '170 TRY · 5 USD' },
           { label: 'Total bid amount', value: 'Œ50,000', detail: '1,700 TRY · 50 USD' },
           { label: 'Promis', value: '1,000,000' },
@@ -87,7 +85,7 @@ describe('commit action rail presentation', () => {
     expect(markup).toContain('data-number-flow="bid-detail-primary"');
     expect(markup).toContain('data-number-flow="bid-detail-detail"');
     expect(markup).toContain('data-flow-group="1"');
-    expect(markup).toContain('5% of escrow basis');
+    expect(markup).toContain('5% of strike');
     expect(markup).toContain('100 USD · per Intex');
     expect(markup).toContain('1,000 USD');
     expect(markup).not.toContain('paid if won');

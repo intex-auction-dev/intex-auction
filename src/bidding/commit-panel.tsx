@@ -158,8 +158,11 @@ const strikeCurrencyTip = (issuanceCurrency: string, referenceCurrency: string):
 
 export const commitFormCopy = {
   quantityHint: (minimum: number) => `Min – ${integer(minimum)} ${intexUnit(minimum)}.`,
-  bidRateHint: (minimum: number) => `Percent of escrow basis. Min – ${formatContractBidRatePercent(minimum)}.`,
-  bidRate: (rate: number) => `${formatContractBidRatePercent(rate)} of escrow basis`,
+  // Terminology rule 3 permits "strike" on the primary auction UI only. The contract denominator is
+  // the escrow basis (`promisLoadMinor`, IntexAuction.sol:403); the receipt, ladder and completion
+  // surfaces keep the contract-accurate wording.
+  bidRateHint: (minimum: number) => `Percent of strike. Min – ${formatContractBidRatePercent(minimum)}.`,
+  bidRate: (rate: number) => `${formatContractBidRatePercent(rate)} of strike`,
   bond: (amount: string) => `Committing locks a refundable ${amount} bond.`,
 } as const;
 
