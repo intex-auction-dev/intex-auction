@@ -126,7 +126,6 @@ const assertStorageAvailable = (storage: ReceiptStorage): void => {
 const adapterFor = (publicClient: PublicClient, profile: ResolvedVenueReadProfile): VenueAuctionAdapter =>
   new VenueAuctionAdapter(fromViemPublicClient(publicClient), profile);
 
-// ponytail: point-in-time read; a registry change before mining still reverts NotWhitelisted, named by revert-classify.
 const requireWhitelistEligibility = async (input: {
   readonly publicClient: PublicClient;
   readonly auctionProxy: Address;

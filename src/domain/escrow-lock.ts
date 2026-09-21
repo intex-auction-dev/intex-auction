@@ -40,7 +40,6 @@ export const maxQuantityForEscrowLock = ({
   const perQuantityNative = ((promisLoadMinor * bidRate) / BID_RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT;
   if (perQuantityNative <= 0n) return UINT16_MAX;
   let cap = UINT128_MAX / perQuantityNative;
-  // ponytail: linear walk bounded by uint16 (<=65535 iters); swap for a binary search if it ever matters.
   while (
     cap < UINT16_MAX &&
     (((cap + 1n) * promisLoadMinor * bidRate) / BID_RATE_SCALE) * NATIVE_UNITS_PER_PROTOCOL_UNIT <= UINT128_MAX

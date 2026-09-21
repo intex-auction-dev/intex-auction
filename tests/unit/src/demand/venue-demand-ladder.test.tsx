@@ -88,8 +88,8 @@ describe('venue demand ladder presentation', () => {
       }),
     });
     expect(html).toContain('Final Bid Ladder');
-    expect(html).toContain('public record · sorted by % of escrow basis');
-    expect(html).toContain('% Escrow basis');
+    expect(html).toContain('public record · sorted by % of strike');
+    expect(html).toContain('% Strike');
     expect(html).toContain('class="venue-demand-curve__line"');
     expect(html).toContain('class="venue-demand-curve__clearing"');
     expect(html).toContain('class="venue-demand-curve__clearing-badge"');
@@ -243,7 +243,7 @@ describe('venue demand ladder presentation', () => {
       }),
     });
     expect(reaped).toContain('Final Bid Ladder');
-    expect(reaped).toContain('public record · sorted by % of escrow basis');
+    expect(reaped).toContain('public record · sorted by % of strike');
     expect(reaped).not.toContain('Reconstructed after reaping');
   });
 
@@ -281,16 +281,16 @@ describe('per-bid ladder hover detail', () => {
     expect(buildLadderBidDetail(segments[0]!, 480_000)).toEqual([
       { label: 'Bid 0xbbbb…bbbb', value: null },
       { label: 'Quantity', value: '12 Intexes' },
-      { label: 'Bid rate', value: '80% of escrow basis' },
+      { label: 'Bid rate', value: '80% of strike' },
       { label: 'Filled', value: '12 of 12' },
-      { label: 'Clearing rate', value: '48% of escrow basis' },
+      { label: 'Clearing rate', value: '48% of strike' },
     ]);
     expect(segments.map((segment) => ladderDetailText(buildLadderBidDetail(segment, 480_000)))).toEqual([
-      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% of escrow basis · Filled 12 of 12 · Clearing rate 48% of escrow basis',
-      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 60% of escrow basis · Filled 12 of 12 · Clearing rate 48% of escrow basis',
-      'Bid 0xbbbb…bbbb · Quantity 10 Intexes · Bid rate 48% of escrow basis · Filled 0 of 10 · Clearing rate 48% of escrow basis',
-      'Bid 0xbbbb…bbbb · Quantity 1 Intex · Bid rate 39.8509% of escrow basis · Filled 0 of 1 · Clearing rate 48% of escrow basis',
-      'Your bid · Quantity 3 Intexes · Bid rate 5% of escrow basis · Filled 0 of 3 · Clearing rate 48% of escrow basis',
+      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% of strike · Filled 12 of 12 · Clearing rate 48% of strike',
+      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 60% of strike · Filled 12 of 12 · Clearing rate 48% of strike',
+      'Bid 0xbbbb…bbbb · Quantity 10 Intexes · Bid rate 48% of strike · Filled 0 of 10 · Clearing rate 48% of strike',
+      'Bid 0xbbbb…bbbb · Quantity 1 Intex · Bid rate 39.8509% of strike · Filled 0 of 1 · Clearing rate 48% of strike',
+      'Your bid · Quantity 3 Intexes · Bid rate 5% of strike · Filled 0 of 3 · Clearing rate 48% of strike',
     ]);
   });
 
@@ -299,7 +299,7 @@ describe('per-bid ladder hover detail', () => {
     expect(buildLadderBidDetail(segments[0]!, null)).toEqual([
       { label: 'Bid 0xaaaa…aaaa', value: null },
       { label: 'Quantity', value: '4 Intexes' },
-      { label: 'Bid rate', value: '25% of escrow basis' },
+      { label: 'Bid rate', value: '25% of strike' },
     ]);
   });
 
@@ -312,10 +312,10 @@ describe('per-bid ladder hover detail', () => {
     expect(html.match(/fill="transparent"/g)).toHaveLength(finalLadder.rows.length);
     expect(html).toContain('<ul class="visually-hidden" aria-label="Revealed bid detail">');
     expect(html).toContain(
-      '<li>Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% of escrow basis · Filled 12 of 12 · Clearing rate 48% of escrow basis</li>',
+      '<li>Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% of strike · Filled 12 of 12 · Clearing rate 48% of strike</li>',
     );
     expect(html).toContain(
-      '<li>Your bid · Quantity 3 Intexes · Bid rate 5% of escrow basis · Filled 0 of 3 · Clearing rate 48% of escrow basis</li>',
+      '<li>Your bid · Quantity 3 Intexes · Bid rate 5% of strike · Filled 0 of 3 · Clearing rate 48% of strike</li>',
     );
     expect(html).toContain('Per-bid fills are reconstructed from the delivered clearing rate and venue supply');
   });

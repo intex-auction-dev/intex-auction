@@ -251,7 +251,6 @@ export class CompletionVenueAdapter {
       tupleValue(tokenIdsRaw, 'issued', 0, 'IntexNFT1155.tokenIds'),
       'series issued token id',
     );
-    // ponytail: getAuctionWonCount was removed with no successor; ceiling is O(n) over already-scanned IntexIssued logs.
     const wonCount = issuedLogs.reduce<bigint>((sum, log, index) => {
       const args = logArgs(log, `issued log ${index}`);
       if (!sameAddress(args.to, wallet)) return sum;
@@ -389,7 +388,6 @@ export class CompletionVenueAdapter {
       knownTokenIds.push(series.issuedTokenId, series.settledTokenId);
     }
 
-    // ponytail: the paginated owner view was removed; ceiling is the page size capping balanceOfBatch fan-out per call.
     const owned: Array<{ tokenId: bigint; balance: bigint }> = [];
     for (let offset = 0; offset < knownTokenIds.length; offset += pageSize) {
       const ids = knownTokenIds.slice(offset, offset + pageSize);

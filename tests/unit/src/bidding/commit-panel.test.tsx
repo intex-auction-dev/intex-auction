@@ -98,7 +98,7 @@ describe('commit action rail presentation', () => {
         icon={ShieldCheck}
         primaryLabel="Bid rate"
         primaryValue="5%"
-        primaryDetail="of escrow basis"
+        primaryDetail="of strike"
         details={[
           {
             label: 'Strike amount',
@@ -133,7 +133,7 @@ describe('commit action rail presentation', () => {
         icon={ShieldCheck}
         primaryLabel="Bid rate"
         primaryValue="5%"
-        primaryDetail="of escrow basis"
+        primaryDetail="of strike"
         details={[
           {
             label: 'Intex series to be issued',

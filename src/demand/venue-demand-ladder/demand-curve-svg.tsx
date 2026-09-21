@@ -577,7 +577,7 @@ export function DemandCurveSvg({
           );
         })}
         <text x="6" y="16" textAnchor="start" className="venue-demand-curve__axis-title">
-          % Escrow basis
+          % Strike
         </text>
       </svg>
       <div className="venue-demand-legend">
