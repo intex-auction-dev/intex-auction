@@ -140,6 +140,11 @@ Reviewed against `blockchain/outbe-chain` at `d7c78459`. `config/abi/abi-pin.jso
 commit and `scripts/build/check-contract-profile.mjs` fails if the submodule advances past it, so a
 future bump forces this section to be revalidated.
 
+Upstream has since moved past this pin. The known drift to `7a0aff51` (unit-named reveal signing,
+removed whitelist gate, claim-based escrow refunds, and more) is tracked in
+[`outbe-chain-drift-d7c78459-to-7a0aff51.md`](outbe-chain-drift-d7c78459-to-7a0aff51.md). Statements
+in this section describe `d7c78459` only.
+
 - **`promisLoadMinor` and the entry/floor/call prices are all `1e6`.** `IIntexNFT1155.SeriesData`
   documents `promisLoadMinor` as PROMIS-units per Intex unit (1e6) and the three prices as ISO
   stable-units (1e6); `contracts/precompiles/src/IIntex.sol` and `crates/core/intex/src/schema.rs`
