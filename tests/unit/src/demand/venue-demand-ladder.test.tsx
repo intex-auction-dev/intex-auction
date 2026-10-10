@@ -111,7 +111,7 @@ describe('venue demand ladder presentation', () => {
       }),
       outcome: {
         supply: 5,
-        loadedPromis: 500_000n * 10n ** 18n,
+        loadedPromis: 500_000n * 10n ** 6n,
         bidder: { address: ADDRESS, wonCount: 3n },
       },
     });
@@ -138,7 +138,7 @@ describe('venue demand ladder presentation', () => {
       }),
       outcome: {
         supply: 24,
-        loadedPromis: 2_400_000n * 10n ** 18n,
+        loadedPromis: 2_400_000n * 10n ** 6n,
         bidder: { address: ADDRESS, wonCount: 0n },
       },
     });
@@ -163,7 +163,7 @@ describe('venue demand ladder presentation', () => {
       }),
       outcome: {
         supply: 24,
-        loadedPromis: 24_000_000n * 10n ** 18n,
+        loadedPromis: 24_000_000n * 10n ** 6n,
         bidder: { address: ADDRESS, wonCount: 6n },
       },
     });
@@ -181,7 +181,7 @@ describe('venue demand ladder presentation', () => {
       }),
       outcome: {
         supply: 8,
-        loadedPromis: 8_000_000n * 10n ** 18n,
+        loadedPromis: 8_000_000n * 10n ** 6n,
         bidder: { address: ADDRESS, wonCount: 0n },
       },
     });
@@ -273,7 +273,7 @@ describe('per-bid ladder hover detail', () => {
       row(1, 398_509, 35, 3, OTHER_ADDRESS),
       row(3, 50_000, 38, 4, ADDRESS),
     ],
-    outcome: { supply: 24, loadedPromis: 2_400_000n * 10n ** 18n, bidder: { address: ADDRESS, wonCount: 0n } },
+    outcome: { supply: 24, loadedPromis: 2_400_000n * 10n ** 6n, bidder: { address: ADDRESS, wonCount: 0n } },
   };
 
   it('states quantity, exact bid rate, and reconstructed fill as labelled tooltip rows', () => {
@@ -281,16 +281,16 @@ describe('per-bid ladder hover detail', () => {
     expect(buildLadderBidDetail(segments[0]!, 480_000)).toEqual([
       { label: 'Bid 0xbbbb…bbbb', value: null },
       { label: 'Quantity', value: '12 Intexes' },
-      { label: 'Bid rate', value: '80% strike' },
+      { label: 'Bid rate', value: '80% of strike' },
       { label: 'Filled', value: '12 of 12' },
-      { label: 'Clearing rate', value: '48% strike' },
+      { label: 'Clearing rate', value: '48% of strike' },
     ]);
     expect(segments.map((segment) => ladderDetailText(buildLadderBidDetail(segment, 480_000)))).toEqual([
-      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% strike · Filled 12 of 12 · Clearing rate 48% strike',
-      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 60% strike · Filled 12 of 12 · Clearing rate 48% strike',
-      'Bid 0xbbbb…bbbb · Quantity 10 Intexes · Bid rate 48% strike · Filled 0 of 10 · Clearing rate 48% strike',
-      'Bid 0xbbbb…bbbb · Quantity 1 Intex · Bid rate 39.8509% strike · Filled 0 of 1 · Clearing rate 48% strike',
-      'Your bid · Quantity 3 Intexes · Bid rate 5% strike · Filled 0 of 3 · Clearing rate 48% strike',
+      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% of strike · Filled 12 of 12 · Clearing rate 48% of strike',
+      'Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 60% of strike · Filled 12 of 12 · Clearing rate 48% of strike',
+      'Bid 0xbbbb…bbbb · Quantity 10 Intexes · Bid rate 48% of strike · Filled 0 of 10 · Clearing rate 48% of strike',
+      'Bid 0xbbbb…bbbb · Quantity 1 Intex · Bid rate 39.8509% of strike · Filled 0 of 1 · Clearing rate 48% of strike',
+      'Your bid · Quantity 3 Intexes · Bid rate 5% of strike · Filled 0 of 3 · Clearing rate 48% of strike',
     ]);
   });
 
@@ -299,7 +299,7 @@ describe('per-bid ladder hover detail', () => {
     expect(buildLadderBidDetail(segments[0]!, null)).toEqual([
       { label: 'Bid 0xaaaa…aaaa', value: null },
       { label: 'Quantity', value: '4 Intexes' },
-      { label: 'Bid rate', value: '25% strike' },
+      { label: 'Bid rate', value: '25% of strike' },
     ]);
   });
 
@@ -312,10 +312,10 @@ describe('per-bid ladder hover detail', () => {
     expect(html.match(/fill="transparent"/g)).toHaveLength(finalLadder.rows.length);
     expect(html).toContain('<ul class="visually-hidden" aria-label="Revealed bid detail">');
     expect(html).toContain(
-      '<li>Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% strike · Filled 12 of 12 · Clearing rate 48% strike</li>',
+      '<li>Bid 0xbbbb…bbbb · Quantity 12 Intexes · Bid rate 80% of strike · Filled 12 of 12 · Clearing rate 48% of strike</li>',
     );
     expect(html).toContain(
-      '<li>Your bid · Quantity 3 Intexes · Bid rate 5% strike · Filled 0 of 3 · Clearing rate 48% strike</li>',
+      '<li>Your bid · Quantity 3 Intexes · Bid rate 5% of strike · Filled 0 of 3 · Clearing rate 48% of strike</li>',
     );
     expect(html).toContain('Per-bid fills are reconstructed from the delivered clearing rate and venue supply');
   });

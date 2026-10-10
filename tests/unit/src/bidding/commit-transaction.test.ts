@@ -68,6 +68,8 @@ interface FakeOptions {
   waitFailure?: 'unknown' | 'dropped';
   simulationFailure?: 'approval' | 'commit';
   gasFailure?: 'approval' | 'commit';
+  whitelistRegistry?: Address;
+  whitelisted?: boolean;
 }
 
 class FakeChain {
@@ -81,6 +83,7 @@ class FakeChain {
   readonly writes: Array<{ functionName: string; args: readonly unknown[] }> = [];
   readonly simulations: string[] = [];
   readonly estimates: string[] = [];
+  isWhitelistedCalls = 0;
   readonly options: FakeOptions;
   private pendingApproval = 0n;
   private pendingCommit = ZERO_HASH;
@@ -96,6 +99,11 @@ class FakeChain {
     return {
       readContract: async (request: { functionName: string }) => {
         switch (request.functionName) {
+          case 'whitelist':
+            return this.options.whitelistRegistry ?? '0x0000000000000000000000000000000000000000';
+          case 'isWhitelisted':
+            this.isWhitelistedCalls += 1;
+            return this.options.whitelisted ?? false;
           case 'getAuctionStage':
             return this.stage;
           case 'getAuctionInfo':
@@ -242,6 +250,40 @@ const execute = async (chain: FakeChain, input: Partial<Parameters<typeof execut
 };
 
 describe('commit transaction boundary', () => {
+  it('rejects an ineligible wallet on a gated deployment before any signature or write', async () => {
+    const registry = '0x00000000000000000000000000000000000000A1' as Address;
+    const chain = new FakeChain({ allowance: 10n, whitelistRegistry: registry, whitelisted: false });
+    let signatures = 0;
+    const wallet = chain.wallet();
+    const originalSign = wallet.signTypedData;
+    wallet.signTypedData = async (request) => {
+      signatures += 1;
+      return originalSign(request);
+    };
+    await expect((await execute(chain, { walletClient: wallet })).result).rejects.toThrow(
+      'not on the auction whitelist',
+    );
+    expect(signatures).toBe(0);
+    expect(chain.writes).toHaveLength(0);
+    expect(chain.isWhitelistedCalls).toBe(1);
+  });
+
+  it('skips the membership read entirely when the registry is the zero address', async () => {
+    const chain = new FakeChain({ allowance: 10n });
+    await (await execute(chain)).result;
+    expect(chain.isWhitelistedCalls).toBe(0);
+    expect(chain.writes.some((write) => write.functionName === 'commitBid')).toBe(true);
+  });
+
+  it('proceeds normally for a whitelisted wallet on a gated deployment', async () => {
+    const registry = '0x00000000000000000000000000000000000000A1' as Address;
+    const chain = new FakeChain({ allowance: 10n, whitelistRegistry: registry, whitelisted: true });
+    const completed = await (await execute(chain)).result;
+    expect(chain.isWhitelistedCalls).toBe(1);
+    expect(completed.reconciliation).toBe('confirmed');
+    expect(chain.writes.some((write) => write.functionName === 'commitBid')).toBe(true);
+  });
+
   it('persists before writes and requests the exact bond approval from the current escrow', async () => {
     const chain = new FakeChain({ bond: 17n, allowance: 0n });
     const { result, storage } = await execute(chain);

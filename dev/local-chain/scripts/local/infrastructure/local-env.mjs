@@ -7,8 +7,8 @@ import {
   backgroundBidderAccount,
   bidderAccount,
   CHAIN_ID,
-  CONTRACT_ROOT,
   DEPLOYMENT_PATH,
+  FOUNDRY_CONFIG_PATH,
   FOUNDRY_VERSION,
   GENESIS_TIMESTAMP,
   LOCAL_ROOT,
@@ -155,7 +155,9 @@ const start = async () => {
       forge,
       [
         'script',
-        'deploy/local/DeployLocal.s.sol:DeployLocal',
+        'dev/local-chain/blockchain/deploy/local/DeployLocal.s.sol:DeployLocal',
+        '--root',
+        ROOT,
         '--rpc-url',
         RPC_URL,
         '--broadcast',
@@ -164,9 +166,10 @@ const start = async () => {
         '-vv',
       ],
       {
-        cwd: CONTRACT_ROOT,
+        cwd: ROOT,
         env: {
           ...process.env,
+          FOUNDRY_CONFIG: FOUNDRY_CONFIG_PATH,
           LOCAL_OPERATOR_PRIVATE_KEY: OPERATOR_PRIVATE_KEY,
           LOCAL_BIDDER_ADDRESS: bidderAccount.address,
           LOCAL_BACKGROUND_BIDDER_ADDRESS: backgroundBidderAccount.address,

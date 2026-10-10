@@ -96,6 +96,9 @@ export const venueStatusPresentation = (
   if (day?.dayType === 'red' || day?.globalAuction.terminalDisposition === 'cancelled-red') {
     return { animated: false, kind: 'cancelled', label: 'CANCELLED', tone: 'danger' };
   }
+  if (day?.globalAuction.terminalDisposition === 'cancelled-unpriced') {
+    return { animated: false, kind: 'cancelled', label: 'CANCELLED', tone: 'neutral' };
+  }
   if ((day?.venueReceipt === 'delivery-pending' || auction?.venue.kind === 'delivery-pending') && !day?.venueStage) {
     return { animated: false, kind: 'pending', label: 'PENDING', tone: 'warning' };
   }

@@ -1,5 +1,5 @@
 import { formatUnits } from 'viem';
-import { ORACLE_RATE_SCALE, PRICE_SCALE } from '../domain/protocol-constants';
+import { ORACLE_RATE_SCALE, PRICE_SCALE, PROMIS_DECIMALS } from '../domain/protocol-constants';
 import { iso4217Currency } from '../domain/iso-4217';
 import { getScheduleTimeZone } from '../domain/display-timezone';
 
@@ -34,10 +34,8 @@ const withTokenSymbol = (amount: string, symbol: string): string => {
 };
 
 /**
- * A Promis / 18-decimal amount with no symbol, trimmed to 12 fraction digits. Was duplicated as
- * `formatPromisAmount` (commit-panel, receipt-tools) and `formatTokenAmount18` (public-auction-view).
  */
-export const formatPromisAmount = (value: bigint): string => groupedTokenAmount(value, 18, 12);
+export const formatPromisAmount = (value: bigint): string => groupedTokenAmount(value, PROMIS_DECIMALS, 12);
 
 /**
  * A payment-token amount trimmed to 12 fraction digits, with the wCOEN→Œ symbol treatment. Was
@@ -62,8 +60,7 @@ export const formatRecoveryTokenAmount = (value: bigint, decimals: number | null
   return `${groupedTokenAmount(value, decimals, 12)} ${symbol}`;
 };
 
-/** Completion-card Promis: 18 decimals trimmed to 8 fraction digits. */
-export const formatCompletionPromis = (value: bigint): string => groupedTokenAmount(value, 18, 8);
+export const formatCompletionPromis = (value: bigint): string => groupedTokenAmount(value, PROMIS_DECIMALS, 8);
 
 /** Venue demand-ladder Promis: `PROMIS_DECIMALS` trimmed to 4 fraction digits. */
 export const formatLadderPromis = (value: bigint, decimals: number): string => groupedTokenAmount(value, decimals, 4);
@@ -134,9 +131,6 @@ export const scheduleTime = (value: bigint): string => {
  *    shape (`oracle-price-chart.test.tsx`, "keeps unchanged digit positions stable").
  *
  *  - `fixedPointRoundedTo2` rounds half-up to exactly two decimals and groups the whole part:
- *    `formatPriceMinor9(1e9)` → `'1.00'`, `formatPriceMinor9(1e18)` → `'1,000,000,000.00'`,
- *    `formatOracleRate18(1e9)` → `'0.00'`. Pinned by
- *    `tests/unit/src/auction/multi-currency-evidence.test.ts` ("pins the auction price scale to 1e9").
  *
  * A single function cannot return both `'1.5'` and `'1.50'`/`'0.00'` for equivalent inputs, so the
  * "one rounding rule" the proposal asked for is expressed as one documented core with two named,
@@ -159,8 +153,7 @@ export const fixedPointRoundedTo2 = (value: bigint, scale: bigint): string => {
 /** Oracle rate (1e18 scale) as a truncated, ungrouped decimal — chart axis / flowing price. */
 export const formatOracleRate = (value: bigint): string => fixedPointTruncated(value, ORACLE_RATE_SCALE, 18);
 
-/** Auction price (1e9 scale) as a truncated, ungrouped decimal — chart overlays. */
-export const formatPrice = (value: bigint): string => fixedPointTruncated(value, PRICE_SCALE, 9);
+export const formatPrice = (value: bigint): string => fixedPointTruncated(value, PRICE_SCALE, 6);
 
 /** Oracle rate (1e18 scale) rounded half-up to two grouped decimals — currency evidence copy. */
 export const formatOracleRate18 = (rate: bigint): string => fixedPointRoundedTo2(rate, ORACLE_RATE_SCALE);
@@ -168,5 +161,4 @@ export const formatOracleRate18 = (rate: bigint): string => fixedPointRoundedTo2
 /** COEN minor amount (1e18 scale) rounded half-up to two grouped decimals — currency evidence copy. */
 export const formatCurrencyMinor18 = (amount: bigint): string => fixedPointRoundedTo2(amount, ORACLE_RATE_SCALE);
 
-/** Auction price minor (1e9 scale) rounded half-up to two grouped decimals — reference values. */
 export const formatPriceMinor9 = (amount: bigint): string => fixedPointRoundedTo2(amount, PRICE_SCALE);

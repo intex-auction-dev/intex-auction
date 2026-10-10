@@ -10,7 +10,6 @@ export const deriveRecoveryTimes = ({
   abandonedBondDelay,
   unfinalizedRefundDelay,
   postFinalizeRefundDelay,
-  noSplitRefundDelay,
 }) => {
   const activeBond = activeAmount(bond, 'amount') && !revealed;
   const activeLock = activeAmount(lock, 'lockedAmount') && Number(lock.status) === 1;
@@ -19,10 +18,8 @@ export const deriveRecoveryTimes = ({
   if (activeLock) {
     if (!escrow?.finalized) {
       escrowRecoveryClaimableAt = BigInt(lock.lockedAt) + BigInt(unfinalizedRefundDelay);
-    } else if (lock.splitRecorded) {
-      escrowRecoveryClaimableAt = BigInt(escrow.finalizedAt) + BigInt(postFinalizeRefundDelay);
     } else {
-      escrowRecoveryClaimableAt = BigInt(escrow.finalizedAt) + BigInt(noSplitRefundDelay);
+      escrowRecoveryClaimableAt = BigInt(escrow.finalizedAt) + BigInt(postFinalizeRefundDelay);
     }
   }
 

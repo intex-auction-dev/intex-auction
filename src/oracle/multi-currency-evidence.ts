@@ -6,8 +6,6 @@ import { liveOracleCrossRate } from './oracle-conversions';
 
 export { formatCurrencyMinor18, formatOracleRate18, formatPriceMinor9 };
 
-const PROMIS_SCALE = 10n ** 18n;
-
 const FIRST_RUN_ISSUANCE_CURRENCY = 949;
 
 const requireNonNegative = (value: bigint, label: string): void => {
@@ -89,7 +87,7 @@ export const referenceEntryPrice = (
 };
 
 export const deriveStrikeAmountMinor = (issuanceEntryPriceMinor: bigint, promisLoadMinor: bigint): bigint =>
-  (issuanceEntryPriceMinor * promisLoadMinor) / PROMIS_SCALE;
+  (issuanceEntryPriceMinor * promisLoadMinor) / PRICE_SCALE;
 
 /**
  * Default issuance currency for the bid form: the bidder's stored preference when the auction offers

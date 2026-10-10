@@ -38,7 +38,6 @@ const ESCROW_ABI = parseAbi([
   'function COMMIT_BOND_ABANDON_DELAY() view returns (uint32)',
   'function UNFINALIZED_REFUND_DELAY() view returns (uint32)',
   'function POST_FINALIZE_REFUND_DELAY() view returns (uint32)',
-  'function NO_SPLIT_REFUND_DELAY() view returns (uint32)',
   'function getCommitBond(uint32 worldwideDay,address bidder) view returns ((uint128 amount,uint32 lockedAt))',
   'function getBidLock(uint32 worldwideDay,address bidder) view returns ((uint128 lockedAmount,uint32 lockedAt,uint8 status,uint128 failedRefund,bool splitRecorded))',
   'function auctionEscrowState(uint32 worldwideDay) view returns (uint128 totalLocked,uint32 lockCount,uint32 finalizedAt,bool finalized)',
@@ -211,8 +210,6 @@ class FakePublicClient {
         return 259_200n;
       case 'POST_FINALIZE_REFUND_DELAY':
         return 259_200n;
-      case 'NO_SPLIT_REFUND_DELAY':
-        return 2_592_000n;
       case 'getCommitBond':
         return { amount: this.state.bondAmount, lockedAt: 10_000n };
       case 'getBidLock':

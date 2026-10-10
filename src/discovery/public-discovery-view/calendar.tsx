@@ -45,6 +45,9 @@ export const auctionCalendarStatus = (day: CalendarWorldwideDay): { label: strin
   if (day.dayType === 'red' || day.globalAuction.terminalDisposition === 'cancelled-red') {
     return { label: 'Cancelled', tone: 'danger' };
   }
+  if (day.globalAuction.terminalDisposition === 'cancelled-unpriced') {
+    return { label: 'Cancelled', tone: 'neutral' };
+  }
   if (day.venueStage || day.venueReceipt === 'delivery-pending') {
     const status = venueStatusPresentation(null, day);
     const calendarTone: PresentationTone = status.tone === 'neutral' ? 'success' : status.tone;

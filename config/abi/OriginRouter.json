@@ -301,7 +301,7 @@
   },
   {
     "type": "function",
-    "name": "parkedSend",
+    "name": "parkedMessage",
     "inputs": [
       {
         "name": "idx",
@@ -313,7 +313,7 @@
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct IOriginRouter.ParkedSend",
+        "internalType": "struct IOriginRouter.ParkedMessage",
         "components": [
           {
             "name": "dstChainId",
@@ -339,6 +339,19 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "resendParkedMessage",
+    "inputs": [
+      {
+        "name": "idx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -1593,7 +1606,7 @@
   },
   {
     "type": "event",
-    "name": "PendingSendFlushed",
+    "name": "ParkedMessageResent",
     "inputs": [
       {
         "name": "idx",
@@ -1825,7 +1838,7 @@
   },
   {
     "type": "event",
-    "name": "SendParked",
+    "name": "MessageParked",
     "inputs": [
       {
         "name": "idx",

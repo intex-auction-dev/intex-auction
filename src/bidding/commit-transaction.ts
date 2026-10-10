@@ -44,7 +44,24 @@ import {
 import { bufferedGasLimit } from '../domain/transaction-gas';
 
 const ZERO_HASH = `0x${'0'.repeat(64)}` as Hash;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
 const SUPPORTED_ISSUANCE_CURRENCIES = Object.freeze(Array.from({ length: 999 }, (_, index) => index + 1));
+
+export const WHITELIST_INELIGIBLE_MESSAGE =
+  'This wallet is not on the auction whitelist and cannot commit a bid. Ask the deployment operator to add it, then reconnect.';
+
+const AUCTION_WHITELIST_ABI = [
+  { type: 'function', name: 'whitelist', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+] as const;
+const IWHITELIST_ABI = [
+  {
+    type: 'function',
+    name: 'isWhitelisted',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'bool' }],
+  },
+] as const;
 
 export class StaleCommitContextError extends Error {}
 export class CommitPreflightError extends Error {}
@@ -108,6 +125,28 @@ const assertStorageAvailable = (storage: ReceiptStorage): void => {
 
 const adapterFor = (publicClient: PublicClient, profile: ResolvedVenueReadProfile): VenueAuctionAdapter =>
   new VenueAuctionAdapter(fromViemPublicClient(publicClient), profile);
+
+const requireWhitelistEligibility = async (input: {
+  readonly publicClient: PublicClient;
+  readonly auctionProxy: Address;
+  readonly bidder: Address;
+}): Promise<void> => {
+  const registry = (await input.publicClient.readContract({
+    address: input.auctionProxy,
+    abi: AUCTION_WHITELIST_ABI,
+    functionName: 'whitelist',
+  })) as Address;
+  if (registry === ZERO_ADDRESS) return;
+  const eligible = (await input.publicClient.readContract({
+    address: registry,
+    abi: IWHITELIST_ABI,
+    functionName: 'isWhitelisted',
+    args: [input.bidder],
+  })) as boolean;
+  if (!eligible) {
+    throw new CommitPreflightError(WHITELIST_INELIGIBLE_MESSAGE);
+  }
+};
 
 export const readFreshCommitState = async (input: {
   readonly publicClient: PublicClient;
@@ -225,6 +264,12 @@ export const executeCommitTransaction = async (input: {
   const now = input.now ?? (() => new Date().toISOString());
   const adapter = adapterFor(input.publicClient, input.profile);
   assertStorageAvailable(input.storage);
+  contextIsCurrent(input);
+  await requireWhitelistEligibility({
+    publicClient: input.publicClient,
+    auctionProxy: input.context.auctionProxy,
+    bidder: input.context.bidder,
+  });
   contextIsCurrent(input);
   const issuanceCurrency = input.issuanceCurrency;
   if (

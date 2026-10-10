@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { OracleAdapter } from '@/protocol/oracle-adapter';
-import { toUtcAccountingDay } from '@/domain/protocol-time';
 import { CHART_WINDOW_POINTS } from '@/domain/protocol-constants';
 import { COEN, FakeClient, ORACLE, USD_QUOTE, key, outbeProfile } from './adapter-fixtures';
 
@@ -58,13 +57,5 @@ describe('Oracle adapter', () => {
     await expect(
       new OracleAdapter(wrongOrder, outbeProfile()).readPriceSnapshotHistory(COEN, USD_QUOTE, 90),
     ).rejects.toThrow('newest-first');
-  });
-
-  it('reads Oracle UTC accounting-day values through the distinct domain', async () => {
-    const client = new FakeClient(31337, new Map<string, unknown>([[key(ORACLE, 'getUtcDayVwap'), 995_000n]]));
-
-    await expect(
-      new OracleAdapter(client, outbeProfile()).readUtcDayVwap(COEN, USD_QUOTE, toUtcAccountingDay(20260803)),
-    ).resolves.toBe(995_000n);
   });
 });

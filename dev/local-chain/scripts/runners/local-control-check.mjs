@@ -6,6 +6,7 @@ import { mnemonicToAccount } from 'viem/accounts';
 import {
   CHAIN_ID,
   DEPLOYMENT_PATH,
+  escrowLockNative,
   LOCAL_CONFIG_ROOT,
   MNEMONIC,
   ROOT,
@@ -131,7 +132,7 @@ const signature = await tester.signTypedData({
   primaryType: 'RevealBid',
   message: { worldwideDay: day, bidder: tester.address, quantity, bidRate, issuanceCurrency: 949, referenceCurrency },
 });
-const lockAmount = (BigInt(quantity) * auction.params.promisLoadMinor * BigInt(bidRate)) / 1_000_000n;
+const lockAmount = escrowLockNative(quantity, auction.params.promisLoadMinor, bidRate);
 await write(deployment.wcoen, tokenAbi, 'approve', [
   deployment.escrowAdapter,
   auction.params.commitBondMinor + lockAmount,
@@ -172,7 +173,7 @@ const [stage, lock, balances, info] = await Promise.all([
   publicClient.readContract({
     address: deployment.intexNFT1155,
     abi: nftAbi,
-    functionName: 'holderBalances',
+    functionName: 'ownerBalances',
     args: [`0x${day.toString(16).padStart(28, '0')}`, tester.address],
   }),
   publicClient.readContract({

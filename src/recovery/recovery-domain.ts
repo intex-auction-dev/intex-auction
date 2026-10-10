@@ -176,10 +176,7 @@ export const projectEscrowRefundRecovery = (input: {
   readonly latestBlockTimestamp: bigint;
   readonly lock: RecoveryBidLock;
   readonly escrowState: RecoveryAuctionEscrowState;
-  readonly constants: Pick<
-    RecoveryContractConstants,
-    'unfinalizedRefundDelay' | 'postFinalizeRefundDelay' | 'noSplitRefundDelay'
-  >;
+  readonly constants: Pick<RecoveryContractConstants, 'unfinalizedRefundDelay' | 'postFinalizeRefundDelay'>;
 }): RecoveryItem | null => {
   if (input.lock.status !== 'locked') return null;
   let path: Extract<
@@ -207,11 +204,11 @@ export const projectEscrowRefundRecovery = (input: {
       'Aggregate finalization completed, but this bidder retains a live lock with a validated failed split. The recorded refund is returned and the remainder is burned.';
   } else {
     path = 'escrow-no-split-refund';
-    claimableAt = input.escrowState.finalizedAt + input.constants.noSplitRefundDelay;
+    claimableAt = input.escrowState.finalizedAt + input.constants.postFinalizeRefundDelay;
     returnedAmount = input.lock.lockedAmount;
     burnedAmount = 0n;
     explanation =
-      'Aggregate finalization completed without a validated split for this bidder. The full principal remains blocked until the exact no-split fallback deadline.';
+      'Aggregate finalization completed without a validated split for this bidder. The full principal remains blocked until the finalization timestamp plus the reviewed post-finalize refund delay.';
   }
 
   return {

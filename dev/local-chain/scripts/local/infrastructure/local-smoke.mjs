@@ -101,10 +101,7 @@ const targetAbi = abiFiles.TargetRouter;
 const auctionAbi = abiFiles.IntexAuction;
 const escrowAbi = abiFiles.EscrowAdapter;
 const nftAbi = abiFiles.IntexNFT1155;
-const nftBridgeAbi = [
-  ...coreAbi,
-  ...parseAbi(['function token() view returns (address)', 'function SYSTEM_RELAYER_ROLE() view returns (bytes32)']),
-];
+const nftBridgeAbi = [...coreAbi, ...parseAbi(['function token() view returns (address)'])];
 const controllerAbi = parseAbi([
   'function operator() view returns (address)',
   'function originRouter() view returns (address)',
@@ -147,10 +144,6 @@ check(same(await read(deployment.targetRouter, targetAbi, 'intex'), deployment.i
 check(
   same(await read(deployment.targetRouter, targetAbi, 'escrowAdapter'), deployment.escrowAdapter),
   'target escrow mismatch',
-);
-check(
-  same(await read(deployment.targetRouter, targetAbi, 'nftBridge'), deployment.intexNFT1155Bridge),
-  'target NFT bridge mismatch',
 );
 check(
   same(await read(deployment.targetRouter, targetAbi, 'tokenBridge'), deployment.tokenBridge),
@@ -205,20 +198,6 @@ const roleChecks = [
   [deployment.escrowAdapter, escrowAbi, 'RELAYER_ROLE', deployment.targetRouter, 'target lacks escrow RELAYER_ROLE'],
   [deployment.intexNFT1155, nftAbi, 'RELAYER_ROLE', deployment.targetRouter, 'target lacks NFT RELAYER_ROLE'],
   [deployment.intexNFT1155, nftAbi, 'RELAYER_ROLE', deployment.intexNFT1155Bridge, 'NFT bridge lacks NFT RELAYER_ROLE'],
-  [
-    deployment.intexNFT1155,
-    nftAbi,
-    'SYSTEM_RELAYER_ROLE',
-    deployment.intexNFT1155Bridge,
-    'NFT bridge lacks NFT SYSTEM_RELAYER_ROLE',
-  ],
-  [
-    deployment.intexNFT1155Bridge,
-    nftBridgeAbi,
-    'SYSTEM_RELAYER_ROLE',
-    deployment.targetRouter,
-    'target lacks bridge SYSTEM_RELAYER_ROLE',
-  ],
 ];
 for (const [address, abi, roleFunction, account, message] of roleChecks) {
   const role = await read(address, abi, roleFunction);
@@ -253,8 +232,7 @@ check(
   'deterministic Oracle fixture mismatch',
 );
 check(
-  (await read(deployment.controller, oracleAbi, 'getCoenExchangeRateFor', [840])) > 0n &&
-    (await read(deployment.controller, oracleAbi, 'getCurrencyRate', [840])) > 0n,
+  (await read(deployment.controller, oracleAbi, 'getCoenExchangeRateFor', [840])) > 0n,
   'deterministic Oracle currency-rate mismatch',
 );
 const worldwideDay = await read(deployment.controller, metadosisAbi, 'getWorldwideDay', [YESTERDAY_WORLDWIDE_DAY]);

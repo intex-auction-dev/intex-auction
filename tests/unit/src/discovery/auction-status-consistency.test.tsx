@@ -43,4 +43,25 @@ describe('auction status consistency', () => {
     expect(markup).toContain('>Pending</span>');
     expect(markup).not.toContain('>Cleared</span>');
   });
+
+  it('presents an unpriced cancellation as Cancelled with a neutral (not danger) tone, matching the detail surface', () => {
+    const unpricedDay = {
+      worldwideDay: '20260803',
+      dayType: 'green',
+      venueParticipation: 'included',
+      venueReceipt: 'not-observed',
+      venueStage: null,
+      failures: [],
+      globalAuction: { terminalDisposition: 'cancelled-unpriced' },
+    } as unknown as CalendarWorldwideDay;
+
+    expect(venueStatusPresentation(null, unpricedDay)).toMatchObject({ label: 'CANCELLED', tone: 'neutral' });
+
+    const markup = renderToStaticMarkup(<CalendarSelectionSummary day={unpricedDay} />);
+    expect(markup).toContain('>Cancelled</span>');
+    expect(markup).toContain('badge--neutral');
+    expect(markup).not.toContain('badge--danger');
+    expect(markup).not.toContain('>Unknown</span>');
+    expect(markup).not.toContain('>Scheduled</span>');
+  });
 });

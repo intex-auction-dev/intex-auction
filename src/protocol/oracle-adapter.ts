@@ -2,7 +2,7 @@ import type { Address } from 'viem';
 import { asArray, asBigint, asSafeNumber } from '../chain/abi-coerce';
 import { iso4217Currency } from '../domain/iso-4217';
 import { CHART_WINDOW_POINTS } from '../domain/protocol-constants';
-import { toUtcTimestamp, type UtcAccountingDay } from '../domain/protocol-time';
+import { toUtcTimestamp } from '../domain/protocol-time';
 import type { AuctionReadClient } from './read-client';
 import type { OutbeDeploymentProfile } from '../chain/deployment-profile';
 import type {
@@ -123,17 +123,5 @@ export class OracleAdapter {
     }
 
     return { pair: { base, quote }, requestedCount, pointsNewestFirst };
-  }
-
-  async readUtcDayVwap(base: Address, quote: Address, day: UtcAccountingDay): Promise<bigint> {
-    return asBigint(
-      await this.client.readContract({
-        address: this.profile.addresses.oracle,
-        abi: this.profile.abis.oracle,
-        functionName: 'getUtcDayVwap',
-        args: [base, quote, day],
-      }),
-      'Oracle UTC day VWAP',
-    );
   }
 }

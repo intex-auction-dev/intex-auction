@@ -8,6 +8,7 @@ import {
   executeRecommitTransaction,
   readFreshCommitState,
   StaleCommitContextError,
+  WHITELIST_INELIGIBLE_MESSAGE,
   type CommitOperationProgress,
   type CommitOperationResult,
   type FreshCommitState,
@@ -45,6 +46,7 @@ import {
 import type { ResolvedVenueReadProfile } from '../runtime-config/load-reviewed-runtime-config';
 import type { WalletState } from '../wallet/wallet-state';
 import { friendlyErrorMessage } from '../chain/contract-errors';
+import { isNotWhitelisted } from '../chain/revert-classify';
 import { showErrorToast, showSuccessToast, showWarningToast } from '../ui/toast';
 
 export { unresolvedBidderActionBlocker } from './bidder-transaction-safety';
@@ -59,7 +61,9 @@ export const reportBidderActionFailure = (error: unknown): string => {
   const message =
     error instanceof StaleCommitContextError
       ? 'The wallet, venue or auction route changed. The prepared operation was discarded without retrying.'
-      : friendlyErrorMessage(error);
+      : isNotWhitelisted(error)
+        ? WHITELIST_INELIGIBLE_MESSAGE
+        : friendlyErrorMessage(error);
   showErrorToast(message, 'Transaction failed');
   return message;
 };

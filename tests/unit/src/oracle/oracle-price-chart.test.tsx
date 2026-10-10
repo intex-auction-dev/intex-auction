@@ -39,6 +39,13 @@ describe('OraclePriceChart', () => {
     expect(html).not.toContain('retained snapshots');
   });
 
+  it('distinguishes the plotted snapshot series from the frozen auction entry price', () => {
+    const html = renderToStaticMarkup(<OraclePriceChart model={model} quoteDenomination="USD" />);
+
+    expect(html).toContain('recorded price snapshots');
+    expect(html).toContain('not the frozen auction entry price');
+  });
+
   it('prefixes the price only when the quote denomination is USD', () => {
     const usd = renderToStaticMarkup(<OraclePriceChart model={model} quoteDenomination="USD" />);
     expect(usd).toContain('$1');

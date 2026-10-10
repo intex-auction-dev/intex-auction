@@ -8,6 +8,7 @@ import {
   paymentAmountToBidRatePercent,
   validateCommitBidInput,
 } from '@/domain/commit-domain';
+import { NATIVE_UNITS_PER_PROTOCOL_UNIT } from '@/domain/protocol-constants';
 
 const constraints = {
   minQuantity: 2,
@@ -31,14 +32,14 @@ describe('commit bid input', () => {
     expect(validateCommitBidInput({ quantity: '3', bidRatePercent: '75.25', constraints })).toEqual({
       quantity: 3,
       bidRate: 752_500,
-      revealLockMinor: 2_257n,
+      revealLockMinor: 2_257n * NATIVE_UNITS_PER_PROTOCOL_UNIT,
     });
   });
 
-  it('maps typed payment-token amounts back to exact contract bid rates', () => {
+  it('maps typed payment-token amounts back to exact contract bid rates at the native-18 scale', () => {
     expect(
       paymentAmountInputToBidRatePercent({
-        value: '0.000000000000005',
+        value: '0.005',
         paymentTokenDecimals: 18,
         promisLoadMinor: 100_000n,
         minimumBidRate: 50_000,
@@ -46,7 +47,7 @@ describe('commit bid input', () => {
     ).toBe('5');
     expect(
       paymentAmountInputToBidRatePercent({
-        value: '0.0000000000000055',
+        value: '0.0055',
         paymentTokenDecimals: 18,
         promisLoadMinor: 100_000n,
         minimumBidRate: 50_000,
@@ -60,14 +61,31 @@ describe('commit bid input', () => {
         minimumBidRate: 50_000,
       }),
     ).toBe('5');
-    expect(
+    expect(() =>
       paymentAmountInputToBidRatePercent({
-        value: '1',
+        value: '4000000000000',
         paymentTokenDecimals: 0,
         promisLoadMinor: 3n,
         minimumBidRate: 1,
       }),
-    ).toBe('33.3334');
+    ).toThrow('above 100%');
+  });
+
+  it('rejects a payment input implying an over-100% rate instead of clamping to the maximum escrow', () => {
+    expect(() =>
+      paymentAmountToBidRatePercent({
+        value: '0.2',
+        paymentTokenDecimals: 18,
+        promisLoadMinor: 100_000n,
+      }),
+    ).toThrow('above 100%');
+    expect(
+      paymentAmountToBidRatePercent({
+        value: '0.1',
+        paymentTokenDecimals: 18,
+        promisLoadMinor: 100_000n,
+      }),
+    ).toBe('100');
   });
 
   it('rejects quantity below the delivered minimum', () => {
@@ -77,11 +95,18 @@ describe('commit bid input', () => {
   it('maps payment amounts to raw bid rates without snapping below the minimum', () => {
     expect(
       paymentAmountToBidRatePercent({
+        value: '0.0001',
+        paymentTokenDecimals: 18,
+        promisLoadMinor: 100_000n,
+      }),
+    ).toBe('0.1');
+    expect(
+      paymentAmountToBidRatePercent({
         value: '0.000000000000000001',
         paymentTokenDecimals: 18,
         promisLoadMinor: 100_000n,
       }),
-    ).toBe('0.001');
+    ).toBe('0');
     expect(
       paymentAmountToBidRatePercent({
         value: '0',
@@ -91,9 +116,9 @@ describe('commit bid input', () => {
     ).toBe('0');
     expect(
       paymentAmountToBidRatePercent({
-        value: '999',
-        paymentTokenDecimals: 0,
-        promisLoadMinor: 1n,
+        value: '0.1',
+        paymentTokenDecimals: 18,
+        promisLoadMinor: 100_000n,
       }),
     ).toBe('100');
   });

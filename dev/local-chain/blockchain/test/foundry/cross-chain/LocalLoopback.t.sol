@@ -26,6 +26,7 @@ import {LocalTokenBridge} from "@local-mocks/LocalTokenBridge.sol";
 contract LocalLoopbackTest is Test {
     uint32 internal constant DAY = 20260714;
     uint128 internal constant PROMIS_LOAD_MINOR = 1000;
+    uint128 internal constant NATIVE_UNITS_PER_PROTOCOL_UNIT = 1e12;
     uint16 internal constant ISSUANCE_CCY = 840;
     uint16 internal constant REFERENCE_CCY = 840;
 
@@ -89,7 +90,7 @@ contract LocalLoopbackTest is Test {
         origin.addTarget(local);
         origin.setProceedsRoute(address(tokenBridge), address(wcoen));
 
-        target.wire(address(auction), address(intex), address(escrow), address(nftBridge));
+        target.wire(address(auction), address(intex), address(escrow));
         target.setProceedsRoute(address(tokenBridge), address(origin));
 
         auction.wire(address(escrow));
@@ -156,8 +157,12 @@ contract LocalLoopbackTest is Test {
         assertEq(uint8(auction.getAuctionStage(DAY)), uint8(IIntexAuction.AuctionStage.RevealingBids), "not revealing");
         _commitAndReveal(iba1, 30, 800_000, iba1Pk);
         _commitAndReveal(iba2, 40, 700_000, iba2Pk);
-        assertEq(uint256(escrow.getBidLock(DAY, iba1).lockedAmount), 24_000, "iba1 lock");
-        assertEq(uint256(escrow.getBidLock(DAY, iba2).lockedAmount), 28_000, "iba2 lock");
+        assertEq(
+            uint256(escrow.getBidLock(DAY, iba1).lockedAmount), 24_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT, "iba1 lock"
+        );
+        assertEq(
+            uint256(escrow.getBidLock(DAY, iba2).lockedAmount), 28_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT, "iba2 lock"
+        );
 
         vm.warp(startTs + 201);
         controller.startClearing(DAY);
@@ -172,15 +177,15 @@ contract LocalLoopbackTest is Test {
 
         controller.postAuctionResult(local, DAY, 50, 700_000, 2);
         IIntexAuction.AuctionResult memory result = auction.getAuctionInfo(DAY).result;
-        assertEq(result.issuedIntexCount, 50, "issued");
+        assertEq(result.issuedUnits, 50, "issued");
         assertEq(result.auctionClearingRate, 700_000, "clearing rate");
 
         address[] memory bidders = new address[](2);
         bidders[0] = iba1;
         bidders[1] = iba2;
         uint128[] memory refunded = new uint128[](2);
-        refunded[0] = 3_000; // lock 24k − paid 30·1000·0.7
-        refunded[1] = 14_000; // lock 28k − paid 20·1000·0.7
+        refunded[0] = 3_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT; // lock 24k − paid 30·1000·0.7
+        refunded[1] = 14_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT; // lock 28k − paid 20·1000·0.7
         uint128[] memory paid = new uint128[](2);
         paid[0] = 21_000;
         paid[1] = 14_000;
@@ -189,8 +194,12 @@ contract LocalLoopbackTest is Test {
         assertEq(
             uint8(escrow.getBidLock(DAY, iba1).status), uint8(IEscrowAdapter.LockStatus.Finalized), "iba1 not final"
         );
-        assertEq(wcoen.balanceOf(iba1), 1e18 - 24_000 + 3_000, "iba1 refund");
-        assertEq(wcoen.balanceOf(iba2), 1e18 - 28_000 + 14_000, "iba2 refund");
+        assertEq(
+            wcoen.balanceOf(iba1), 1e18 - 24_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT + 3_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT, "iba1 refund"
+        );
+        assertEq(
+            wcoen.balanceOf(iba2), 1e18 - 28_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT + 14_000 * NATIVE_UNITS_PER_PROTOCOL_UNIT, "iba2 refund"
+        );
         assertEq(controller.proceedsCalls(), 1, "proceeds not distributed");
         assertEq(controller.proceedsValue(), 35_000, "proceeds amount");
         assertEq(controller.proceedsSrcChainId(), local, "proceeds source chain");
@@ -207,7 +216,8 @@ contract LocalLoopbackTest is Test {
         issuance[0] = IOriginRouter.IssuanceInstructionsParams({
             seriesId: CreateSeriesLib.seriesId(DAY),
             worldwideDay: DAY,
-            issuedIntexCount: 50,
+            issuedAt: uint32(block.timestamp),
+            issuedUnits: 50,
             promisLoadMinor: PROMIS_LOAD_MINOR,
             entryPriceMinor: 1e13,
             floorPriceMinor: 100,
@@ -225,10 +235,10 @@ contract LocalLoopbackTest is Test {
         assertEq(intex.balanceOf(iba1, tokenId), 30, "iba1 mint");
         assertEq(intex.balanceOf(iba2, tokenId), 20, "iba2 mint");
 
-        assertEq(target.nextPendingBidsRelayIdx(), 0, "bids relay parked");
-        (,, bool proceedsParked,) = target.pendingProceedsRoutes(0);
-        assertFalse(proceedsParked, "proceeds route parked");
-        assertEq(target.nextPendingIssuanceMintIdx(), 0, "issuance mint parked");
-        assertEq(origin.parkedSend(0).payload.length, 0, "origin leg parked");
+        (uint16 bidsNextBatch,,) = target.bidsRelay(DAY);
+        assertEq(bidsNextBatch, 0, "bids relay parked");
+        assertEq(target.parkedProceedsCount(), 0, "proceeds route parked");
+        assertEq(target.parkedIssuanceCount(), 0, "issuance mint parked");
+        assertEq(origin.parkedMessage(0).payload.length, 0, "origin leg parked");
     }
 }

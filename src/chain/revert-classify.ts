@@ -82,3 +82,8 @@ export const isAuctionNotFound = (error: unknown): boolean => {
   const decoded = decodedError(error);
   return decoded?.name === 'AuctionNotFound' || matchesSelector(error, 'AuctionNotFound()');
 };
+
+export const isNotWhitelisted = (error: unknown): boolean => {
+  const decoded = decodedError(error);
+  return decoded?.name === 'NotWhitelisted' || matchesSelector(error, 'NotWhitelisted(address)');
+};

@@ -83,7 +83,6 @@ export interface CanonicalSeriesSnapshot {
   issuanceCurrency: number;
   referenceCurrency: number;
   worldwideDay?: WorldwideDayKey;
-  costAmountMinor?: bigint;
 }
 
 export interface VenueAuctionSnapshot {
@@ -162,7 +161,6 @@ export interface VenueRecoveryContractConstants {
   readonly abandonedCommitBondDelay: bigint;
   readonly unfinalizedRefundDelay: bigint;
   readonly postFinalizeRefundDelay: bigint;
-  readonly noSplitRefundDelay: bigint;
 }
 
 export interface VenueEscrowBidderState {

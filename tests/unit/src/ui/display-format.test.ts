@@ -49,11 +49,15 @@ describe('display-format grouping idiom', () => {
     expect(formatRecoveryTokenAmount(5n, 18, null)).toBe('5 token minor units');
   });
 
-  it('keeps the distinct promis fraction widths (12 / 8 / 4)', () => {
-    const value = 1_123_456_789_012_345_678n; // 1.123456789012345678 at 18 decimals
-    expect(formatPromisAmount(value)).toBe('1.123456789012');
-    expect(formatCompletionPromis(value)).toBe('1.12345678');
-    expect(formatLadderPromis(value, 18)).toBe('1.1234');
+  it('formats promis at the 1e6 scale and trims the ladder to 4 fraction digits', () => {
+    expect(formatPromisAmount(1_234_567n)).toBe('1.234567');
+    expect(formatCompletionPromis(1_234_567n)).toBe('1.234567');
+    expect(formatLadderPromis(1_123_456_789_012_345_678n, 18)).toBe('1.1234');
+  });
+
+  it('pins promis formatting to the chain 1e6 scale (fails if 18 decimals returns)', () => {
+    expect(formatPromisAmount(1_000_000n)).toBe('1');
+    expect(formatCompletionPromis(1_000_000n)).toBe('1');
   });
 });
 
@@ -100,21 +104,21 @@ describe('display-format fixed-point rounding', () => {
     expect(formatOracleRate(1_000_000_000_000_000_000n)).toBe('1');
     // half-way at the 18th decimal is truncated downward, never rounded up
     expect(fixedPointTruncated(1_500_000_000_000_000_005n, ORACLE_RATE_SCALE, 18)).toBe('1.500000000000000005');
-    expect(fixedPointTruncated(1_999_999_999n, PRICE_SCALE, 9)).toBe('1.999999999');
-    expect(formatPrice(2_280_000_000n)).toBe('2.28');
+    expect(fixedPointTruncated(1_999_999_999n, PRICE_SCALE, 6)).toBe('1999.999999');
+    expect(formatPrice(2_280_000n)).toBe('2.28');
     expect(fixedPointTruncated(LARGEST_REALISTIC, ORACLE_RATE_SCALE, 18)).toBe('1000000000000');
   });
 
   it('fixedPointRoundedTo2: rounds half-up to two grouped decimals', () => {
-    expect(formatPriceMinor9(1_000_000_000n)).toBe('1.00'); // pinned: multi-currency-evidence.test.ts
-    expect(formatPriceMinor9(1_080_000_000n)).toBe('1.08');
-    expect(formatPriceMinor9(2_280_000_000n)).toBe('2.28');
-    expect(formatPriceMinor9(1_000_000_000_000_000_000n)).toBe('1,000,000,000.00');
+    expect(formatPriceMinor9(1_000_000n)).toBe('1.00'); // pinned: multi-currency-evidence.test.ts
+    expect(formatPriceMinor9(1_080_000n)).toBe('1.08');
+    expect(formatPriceMinor9(2_280_000n)).toBe('2.28');
+    expect(formatPriceMinor9(1_000_000_000_000_000_000n)).toBe('1,000,000,000,000.00');
     expect(formatOracleRate18(1_000_000_000n)).toBe('0.00');
     // half-way at the hundredth rounds up: 1.005 → 1.01 (bigint, no float)
-    expect(fixedPointRoundedTo2(1_005_000_000n, PRICE_SCALE)).toBe('1.01');
+    expect(fixedPointRoundedTo2(1_005_000n, PRICE_SCALE)).toBe('1.01');
     // just below half-way stays down: 1.00499… → 1.00
-    expect(fixedPointRoundedTo2(1_004_999_999n, PRICE_SCALE)).toBe('1.00');
+    expect(fixedPointRoundedTo2(1_004_999n, PRICE_SCALE)).toBe('1.00');
     expect(fixedPointRoundedTo2(0n, PRICE_SCALE)).toBe('0.00');
     expect(formatCurrencyMinor18(LARGEST_REALISTIC)).toBe('1,000,000,000,000.00');
     expect(() => fixedPointRoundedTo2(-1n, PRICE_SCALE)).toThrow('non-negative');

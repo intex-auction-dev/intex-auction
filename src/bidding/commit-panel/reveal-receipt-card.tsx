@@ -340,7 +340,10 @@ export function RevealReceiptCard({
               value: `${integer(evidence.receipt.quantity)} ${intexUnit(evidence.receipt.quantity)}`,
               detail: `${formatPromisAmount(quantity * evidence.fresh.params.promisLoadMinor)} Promis`,
             },
-            { label: 'Bid rate', value: `${formatContractBidRatePercent(evidence.receipt.contractBidRate)} of strike` },
+            {
+              label: 'Bid rate',
+              value: `${formatContractBidRatePercent(evidence.receipt.contractBidRate)} of strike`,
+            },
             {
               label: 'Bid amount per Intex',
               value: paymentAmount(perIntexLock),

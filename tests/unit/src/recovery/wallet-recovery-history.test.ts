@@ -18,7 +18,6 @@ const ABI = parseAbi([
   'event ProceedsBurned(uint32 indexed worldwideDay,address indexed bidder,uint128 amount)',
   'event AuctionEscrowFinalized(bytes32 indexed receiveId,uint32 indexed worldwideDay,uint128 totalRefunded,uint128 totalPaid,uint32 bidsProcessed)',
   'event BidderRefundFailed(bytes32 indexed receiveId,uint32 indexed worldwideDay,address indexed bidder,bytes reason)',
-  'event BidderRetried(bytes32 indexed receiveId,uint32 indexed worldwideDay,address indexed bidder,uint128 refundedAmount,uint128 paidAmount)',
   'event FinalizationNoOp(uint32 indexed worldwideDay,uint32 bidsProcessed)',
   'event Wired(address intexAuctionOld,address intexAuctionNew,address compactOld,address compactNew,address paymentTokenOld,address paymentTokenNew)',
   'function intexAuctionContract() view returns (address)',
@@ -26,7 +25,6 @@ const ABI = parseAbi([
   'function COMMIT_BOND_ABANDON_DELAY() view returns (uint32)',
   'function UNFINALIZED_REFUND_DELAY() view returns (uint32)',
   'function POST_FINALIZE_REFUND_DELAY() view returns (uint32)',
-  'function NO_SPLIT_REFUND_DELAY() view returns (uint32)',
 ]);
 
 const AUCTION = '0x1111111111111111111111111111111111111111' as Address;
@@ -130,7 +128,6 @@ class FakeClient implements AuctionReadClient {
     if (request.functionName === 'COMMIT_BOND_ABANDON_DELAY') return 2_592_000n;
     if (request.functionName === 'UNFINALIZED_REFUND_DELAY') return 259_200n;
     if (request.functionName === 'POST_FINALIZE_REFUND_DELAY') return 259_200n;
-    if (request.functionName === 'NO_SPLIT_REFUND_DELAY') return 2_592_000n;
     throw new Error(`Unexpected read ${request.functionName}`);
   };
   getLogs = async (request: {

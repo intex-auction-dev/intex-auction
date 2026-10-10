@@ -1,0 +1,5 @@
+{
+  "comment": "Commit of blockchain/outbe-chain that the bundled config/abi/*.json entries were reviewed and patched against. scripts/build/check-contract-profile.mjs asserts the submodule HEAD still equals this. Bumping the submodule without redoing the divergence review will fail that assertion on purpose.",
+  "outbeChainCommit": "d7c784592b51a86dee71367e50c2007e5aa0998d",
+  "reviewedOn": "2026-09-18"
+}

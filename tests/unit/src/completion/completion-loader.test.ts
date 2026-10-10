@@ -94,8 +94,6 @@ const noBid: BidderCompletionEvidence = {
   lock: { lockedAmount: 0n, lockedAt: 0n, status: 'none', failedRefund: 0n, splitRecorded: false },
   recoveredAmount: null,
   burnedAmount: null,
-  exactRetriedRefund: null,
-  exactRetriedPaid: null,
 };
 
 const recipient = (seriesId: Hex, wonCount: bigint): RecipientSeriesEvidence => ({
@@ -327,8 +325,8 @@ describe('Phase 10 completion loader', () => {
         readBidderCompletion: async () => ({
           ...noBid,
           lock: { lockedAmount: 4_000n, lockedAt: 1n, status: 'finalized', failedRefund: 0n, splitRecorded: true },
-          exactRetriedRefund: 0n,
-          exactRetriedPaid: 4_000n,
+          recoveredAmount: 0n,
+          burnedAmount: 4_000n,
         }),
         readBidderRevealedBid: async () => ({ quantity: 4n, bidRate: 900_000n }),
         readPaymentToken: async () => ({ decimals: 18, symbol: 'wCOEN' }),
@@ -357,7 +355,7 @@ describe('Phase 10 completion loader', () => {
     expect(result.bidderBidQuantity).toBe(4n);
   });
 
-  it('marks a fully refunded finalized bidder as no allocation only with exact evidence', async () => {
+  it('marks a fully refunded finalized bidder as no allocation only with recovery evidence', async () => {
     const result = await loadAuctionCompletion(
       auction(5),
       { readCanonicalSeries: async (seriesId) => canonical(seriesId) },
@@ -369,8 +367,8 @@ describe('Phase 10 completion loader', () => {
         readBidderCompletion: async () => ({
           ...noBid,
           lock: { lockedAmount: 800n, lockedAt: 1n, status: 'finalized', failedRefund: 0n, splitRecorded: true },
-          exactRetriedRefund: 800n,
-          exactRetriedPaid: 0n,
+          recoveredAmount: 800n,
+          burnedAmount: 0n,
         }),
         readBidderRevealedBid: async () => null,
         readPaymentToken: async () => ({ decimals: 18, symbol: 'wCOEN' }),

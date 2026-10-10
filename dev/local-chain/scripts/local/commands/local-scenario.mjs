@@ -18,6 +18,7 @@ import {
   bidderAccount,
   CHAIN_ID,
   DEPLOYMENT_PATH,
+  escrowLockNative,
   LOCAL_CONFIG_ROOT,
   MNEMONIC,
   operatorAccount,
@@ -46,9 +47,8 @@ const TARGET_REVEAL = 1;
 const TARGET_ISSUANCE = 2;
 const TARGET_COMPLETED = 3;
 const TARGET_CANCELLED = 4;
-// Local COEN and promisLoadMinor values use 1e18; published auction prices use 1e9.
-const PROMIS_SCALE = 1_000_000_000_000_000_000n;
-const PRICE_SCALE = 1_000_000_000n;
+const PROMIS_SCALE = 1_000_000n;
+const PRICE_SCALE = 1_000_000n;
 const UINT64_MAX = 18_446_744_073_709_551_615n;
 const PROMIS_LOAD = 100_000n * PROMIS_SCALE;
 const MIN_BID_RATE = 50_000;
@@ -69,8 +69,8 @@ const oracleQuoteToken = (isoCode) =>
     ).slice(26)}`,
   );
 const ENTRY_PRICE = PRICE_SCALE;
-const FLOOR_PRICE = 1_080_000_000n;
-const CALL_PRICE = 2_280_000_000n;
+const FLOOR_PRICE = (PRICE_SCALE * 108n) / 100n;
+const CALL_PRICE = (PRICE_SCALE * 228n) / 100n;
 const ORACLE_HISTORY_DAYS = 90;
 // Keep fixture density low; seed baseline history if sub-hour data becomes necessary.
 const ORACLE_INTRADAY_POINTS = 5;
@@ -175,13 +175,12 @@ const controllerAbi = parseAbi([
   'function getExchangeRateData(address base,address quote) view returns (uint256 rate,uint64 lastBlock,uint64 lastTimestamp)',
   'function getPriceSnapshotHistory(address base,address quote,uint32 count) view returns (uint64[] timestamps,uint256[] rates,uint256[] volumes)',
   'function getReferenceCurrencies() view returns (uint16[] isoCodes)',
-  'function getCurrencyRate(uint16 isoCode) view returns (uint256 rate)',
   'function getCoenExchangeRateFor(uint16 isoCode) view returns (uint256 rate)',
   'function startAuction((uint32 worldwideDay,uint32 commitEnd,uint32 revealEnd,uint32 issuanceEnd,uint128 promisLoadMinor,uint32 minIntexBidRate,(uint16 isoCode,uint64 entryPriceMinor,uint64 floorPriceMinor,uint64 callPriceMinor)[] prices,uint32 callNoticePeriod,uint32 callWindow,uint32 callThreshold,uint16 minIntexBidQuantity,uint128 commitBondMinor,uint8 dayState) params)',
   'function startClearing(uint32 worldwideDay)',
   'function postAuctionResult(uint32 dstChainId,uint32 worldwideDay,uint32 issuedIntexCount,uint64 auctionClearingRate,uint32 wonBidsCount)',
   'function postRefundInstructions(uint32 dstChainId,uint32 worldwideDay,uint16 chunkIndex,uint16 totalChunks,address[] bidderAddresses,uint128[] refundedAmounts,uint128[] paidAmounts)',
-  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedIntexCount,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
+  'function postIssuanceInstructions(uint32 dstChainId,(bytes14 seriesId,uint32 worldwideDay,uint32 issuedAt,uint32 issuedUnits,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 callWindow,uint32 callThreshold,uint64 callPriceMinor,address[] recipients,uint256[] quantities)[] series)',
   'function setGlobalAuctionStage(uint32 worldwideDay,uint8 stage)',
   'function getAuctionStage(uint32 worldwideDay) view returns (uint8)',
   'function getBidsCount(uint32 worldwideDay) view returns (uint256)',
@@ -190,9 +189,9 @@ const controllerAbi = parseAbi([
   'function isChainSkipped(uint32 worldwideDay,uint32 srcChainId) view returns (bool)',
   'function markChainSkipped(uint32 worldwideDay,uint32 srcChainId)',
   'function recordGlobalClearing(uint32 worldwideDay,uint32 issuedIntexCount,uint32 clearingRate,uint64 totalDemand,uint256 unusedPromis,bool reportUnused)',
-  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor) data)',
+  'function setSeries((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits) data)',
   'function seriesExists(bytes14 seriesId) view returns (bool)',
-  'function seriesData(bytes14 seriesId) view returns ((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedIntexCount,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint256 costAmountMinor))',
+  'function seriesData(bytes14 seriesId) view returns ((bytes14 seriesId,uint256 promisLoadMinor,uint256 entryPriceMinor,uint256 floorPriceMinor,uint32 issuedUnits,uint32 callWindow,uint32 callThreshold,uint256 callPriceMinor,uint8 state,uint32 issuedAt,uint32 calledAt,uint32 callNoticePeriod,uint16 issuanceCurrency,uint16 referenceCurrency,uint32 worldwideDay,uint32 settledUnits,uint32 exercisedUnits,uint32 gemFactoryUnits))',
   'function setWorldwideDayTerminalReceipt(uint32 worldwideDay,(uint8 outcome,uint256 valueRouted,uint256 carryOverBefore,uint256 carryOverAfter,uint8 retirementOutcome,uint64 blockNumber,bool exists) receipt)',
   'function getWorldwideDayTerminalReceipt(uint32 worldwideDay) view returns (uint8 outcome,uint256 valueRouted,uint256 carryOverBefore,uint256 carryOverAfter,uint8 retirementOutcome,uint64 blockNumber)',
 ]);
@@ -203,13 +202,13 @@ const bridgeAbi = parseAbi([
   'function autoDeliver() view returns (bool)',
   'function lastPayload() view returns (bytes)',
 ]);
-const originWriteAbi = parseAbi(['function flushPendingSend(uint256 idx)']);
+const originWriteAbi = parseAbi(['function resendParkedMessage(uint256 idx)']);
 const originReadAbi = parseAbi([
-  'function parkedSend(uint256 idx) view returns ((uint32 dstChainId,uint64 gasLimit,bool sent,bytes payload))',
+  'function parkedMessage(uint256 idx) view returns ((uint32 dstChainId,uint64 gasLimit,bool sent,bytes payload))',
   'function targetsOf(uint32 worldwideDay) view returns (uint32[])',
 ]);
 const targetExtraAbi = parseAbi([
-  'function pendingBidsRelays(uint256 idx) view returns (uint32 worldwideDay,bool exists,bool done)',
+  'function bidsRelay(uint32 worldwideDay) view returns (uint16 nextBatch,uint16 totalBatches,bool done)',
   'function nextPendingBidsRelayIdx() view returns (uint256)',
 ]);
 const erc20Abi = parseAbi([
@@ -222,19 +221,21 @@ const escrowAbi = await readJson(resolve(LOCAL_CONFIG_ROOT, 'abi/EscrowAdapter.j
 const nftAbi = await readJson(resolve(LOCAL_CONFIG_ROOT, 'abi/IntexNFT1155.json'));
 
 const auctionClearedEvent = parseAbiItem(
-  'event AuctionCleared(uint32 indexed worldwideDay,uint32 issuedIntexCount,uint32 clearingRate,uint64 totalDemand)',
+  'event AuctionCleared(uint32 indexed worldwideDay,uint32 issuedUnits,uint32 clearingRate,uint64 totalDemand)',
 );
 const auctionClearedEmptyEvent = parseAbiItem(
   'event AuctionClearedEmpty(uint32 indexed worldwideDay,uint64 totalDemand)',
 );
 const unusedSupplyEvent = parseAbiItem('event UnusedSupplyReported(uint32 indexed worldwideDay,uint256 unusedPromis)');
 const chainSkippedEvent = parseAbiItem('event ChainSkipped(uint32 indexed worldwideDay,uint32 indexed srcChainId)');
-const sendParkedEvent = parseAbiItem('event SendParked(uint256 indexed idx,uint32 indexed dstChainId,uint8 msgType)');
+const sendParkedEvent = parseAbiItem(
+  'event MessageParked(uint256 indexed idx,uint32 indexed dstChainId,uint8 msgType)',
+);
 const pendingSendFlushedEvent = parseAbiItem(
-  'event PendingSendFlushed(uint256 indexed idx,uint32 indexed dstChainId,bytes32 sendId)',
+  'event ParkedMessageResent(uint256 indexed idx,uint32 indexed dstChainId,bytes32 sendId)',
 );
 const auctionResultReceivedEvent = parseAbiItem(
-  'event AuctionResultReceived(uint32 indexed srcChainId,uint32 indexed worldwideDay,uint32 issuedIntexCount,uint64 clearingRate)',
+  'event AuctionResultReceived(uint32 indexed srcChainId,uint32 indexed worldwideDay,uint32 issuedUnits,uint64 clearingRate)',
 );
 const refundReceivedEvent = parseAbiItem(
   'event RefundInstructionsReceived(uint32 indexed srcChainId,uint32 indexed worldwideDay,uint256 instructionsCount)',
@@ -774,7 +775,7 @@ const makeBidMaterialFor = async (
     bidRate,
     signature,
     commitHash: keccak256(signature),
-    lockAmount: (BigInt(quantity) * PROMIS_LOAD * BigInt(bidRate)) / RATE_SCALE,
+    lockAmount: escrowLockNative(quantity, PROMIS_LOAD, bidRate),
     worldwideDay,
   };
 };
@@ -869,7 +870,7 @@ const setCanonicalSeries = async (seededAt, issued, worldwideDay = WORLDWIDE_DAY
       promisLoadMinor: PROMIS_LOAD,
       entryPriceMinor: ENTRY_PRICE,
       floorPriceMinor: FLOOR_PRICE,
-      issuedIntexCount: issued,
+      issuedUnits: issued,
       callWindow: 30 * DAY_SECONDS,
       callThreshold: 21 * DAY_SECONDS,
       callPriceMinor: CALL_PRICE,
@@ -880,7 +881,9 @@ const setCanonicalSeries = async (seededAt, issued, worldwideDay = WORLDWIDE_DAY
       issuanceCurrency,
       referenceCurrency: 840,
       worldwideDay,
-      costAmountMinor: 0n,
+      settledUnits: 0,
+      exercisedUnits: 0,
+      gemFactoryUnits: 0,
     },
   ]);
 
@@ -1461,10 +1464,10 @@ const prepareVenueChainSkipped = async (seededAt) => {
   const pending = await publicClient.readContract({
     address: deployment.targetRouter,
     abi: targetExtraAbi,
-    functionName: 'pendingBidsRelays',
-    args: [0n],
+    functionName: 'bidsRelay',
+    args: [WORLDWIDE_DAY],
   });
-  assert(Number(pending[0]) === WORLDWIDE_DAY && pending[1] && !pending[2], 'Local bids relay was not parked.');
+  assert(!pending[2], 'Local bids relay was not parked.');
   assert(
     (await publicClient.readContract({
       address: deployment.controller,
@@ -1553,7 +1556,7 @@ const prepareParkedResult = async (seededAt) => {
   const parked = await publicClient.readContract({
     address: deployment.originRouter,
     abi: originReadAbi,
-    functionName: 'parkedSend',
+    functionName: 'parkedMessage',
     args: [0n],
   });
   assert(parked.payload !== '0x' && !parked.sent, 'Origin result send was not parked.');
@@ -1562,7 +1565,7 @@ const prepareParkedResult = async (seededAt) => {
     idx: 0n,
     dstChainId: CHAIN_ID,
   });
-  assert(logs.length === 1, 'SendParked event is missing.');
+  assert(logs.length === 1, 'MessageParked event is missing.');
   return { receipt, parked };
 };
 
@@ -1579,11 +1582,11 @@ const seedOriginSendFlushedTargetPending = async (seededAt) => {
   await prepareParkedResult(seededAt);
   await tx(operatorWallet, deployment.bridge, bridgeAbi, 'setFee', [0n]);
   await tx(operatorWallet, deployment.bridge, bridgeAbi, 'setAutoDeliver', [false]);
-  const flushReceipt = await tx(operatorWallet, deployment.originRouter, originWriteAbi, 'flushPendingSend', [0n]);
+  const flushReceipt = await tx(operatorWallet, deployment.originRouter, originWriteAbi, 'resendParkedMessage', [0n]);
   const parked = await publicClient.readContract({
     address: deployment.originRouter,
     abi: originReadAbi,
-    functionName: 'parkedSend',
+    functionName: 'parkedMessage',
     args: [0n],
   });
   const flushLogs = await sameTransactionLogs(flushReceipt, deployment.originRouter, pendingSendFlushedEvent, {
@@ -2078,19 +2081,16 @@ const seedFinalizedWithoutSplit = async (seededAt) => {
     'No-split finalization evidence is inconsistent.',
   );
 
-  const period = Number(await readConstant(deployment.escrowAdapter, escrowAbi, 'NO_SPLIT_REFUND_DELAY'));
-  assert(period === 30 * 24 * 60 * 60, `Reviewed no-split delay changed to ${period}.`);
+  const period = Number(await readConstant(deployment.escrowAdapter, escrowAbi, 'POST_FINALIZE_REFUND_DELAY'));
+  assert(period === 72 * 60 * 60, `Reviewed no-split delay changed to ${period}.`);
   const claimableAt = Number(state[2]) + period;
   const boundary = await assertRefundBoundary({
     bidder,
     deadline: claimableAt,
-    beforeError: 'SplitNotRecorded',
-    beforeArgs: () => [WORLDWIDE_DAY, bidder],
+    beforeError: 'RefundNotYetClaimable',
     expectedReturned: lock.lockedAmount,
     expectedBurned: 0n,
   });
-  await mineAt(boundary.before);
-  await assertContractRevert(() => simulateRefundClaim(bidder), 'SplitNotRecorded', [WORLDWIDE_DAY, bidder]);
 
   return {
     ...baseSummary('finalized-without-split', seededAt),
@@ -2156,19 +2156,16 @@ const seedFinalizationNoOp = async (seededAt) => {
   );
   assert(Number(noOpLogs[0].args.bidsProcessed) === 1, 'FinalizationNoOp bidder count is incorrect.');
 
-  const period = Number(await readConstant(deployment.escrowAdapter, escrowAbi, 'NO_SPLIT_REFUND_DELAY'));
-  assert(period === 30 * 24 * 60 * 60, `Reviewed no-op fallback delay changed to ${period}.`);
+  const period = Number(await readConstant(deployment.escrowAdapter, escrowAbi, 'POST_FINALIZE_REFUND_DELAY'));
+  assert(period === 72 * 60 * 60, `Reviewed no-op fallback delay changed to ${period}.`);
   const claimableAt = Number(state[2]) + period;
   const boundary = await assertRefundBoundary({
     bidder,
     deadline: claimableAt,
-    beforeError: 'SplitNotRecorded',
-    beforeArgs: () => [WORLDWIDE_DAY, bidder],
+    beforeError: 'RefundNotYetClaimable',
     expectedReturned: lock.lockedAmount,
     expectedBurned: 0n,
   });
-  await mineAt(boundary.before);
-  await assertContractRevert(() => simulateRefundClaim(bidder), 'SplitNotRecorded', [WORLDWIDE_DAY, bidder]);
 
   return {
     ...baseSummary('finalization-no-op', seededAt),

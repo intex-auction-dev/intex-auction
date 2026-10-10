@@ -17,21 +17,19 @@ const nftAbi = parseAbi([
   'function readData(uint32) view returns ((uint16 issuanceCurrency,uint16 referenceCurrency,uint32 issuedIntexCount,uint128 promisLoadMinor,uint64 entryPriceMinor,uint64 floorPriceMinor,uint64 callPriceMinor,(uint16 windowDays,uint16 thresholdDays,uint32 intexCallPeriod) callTrigger,uint32 issuedAt,uint32 calledAt,uint32 totalSupply,uint8 status,uint8 state,uint32 worldwideDay))',
   'function tokenIds(uint32) pure returns (uint256 issued,uint256 settled)',
   'function getSeriesPaginated(uint256,uint256) view returns (uint256[] series,uint256 total)',
-  'function getOwnedSeriesWithBalancesPaginated(address,uint256,uint256) view returns (uint256[] ownedTokenIds,uint256[] balances,uint256 total)',
-  'function getAuctionWonCount(uint32,address) view returns (uint16)',
-  'function holderBalances(uint32,address) view returns ((uint32 issued,uint32 settled))',
+  'function balanceOfBatch(address[],uint256[]) view returns (uint256[])',
+  'function ownerBalances(uint32,address) view returns ((uint32 issued,uint32 settled))',
   'event IntexIssued(address indexed operator,uint256 indexed tokenId,address indexed to,uint256 quantity)',
 ]);
 const routerAbi = parseAbi([
   'event IssuanceInstructionsReceived(uint32 indexed srcChainId,uint32 indexed seriesId,uint256 recipientsCount)',
-  'event IssuanceMintDeferred(uint256 indexed idx,uint32 indexed seriesId,address indexed recipient,bytes reason)',
-  'event IssuanceMintFlushed(uint256 indexed idx,uint32 indexed seriesId)',
+  'event IssuanceParked(uint256 indexed idx,uint32 indexed seriesId,address indexed recipient,bytes reason)',
+  'event ParkedIssuanceApplied(uint256 indexed idx,uint32 indexed seriesId)',
 ]);
 const escrowAbi = parseAbi([
   'function getBidLock(uint32,address) view returns ((uint128 lockedAmount,uint32 lockedAt,uint8 status,uint128 failedRefund,bool splitRecorded))',
   'event FundsRefunded(bytes32 indexed receiveId,uint32 indexed worldwideDay,address indexed bidder,uint128 amount)',
   'event ProceedsBurned(uint32 indexed worldwideDay,address indexed bidder,uint128 amount)',
-  'event BidderRetried(bytes32 indexed receiveId,uint32 indexed worldwideDay,address indexed bidder,uint128 refundedAmount,uint128 paidAmount)',
 ]);
 const auctionAbi = parseAbi([
   'event BidRevealed(uint32 indexed worldwideDay,address indexed bidder,uint16 indexed quantity,uint32 bidRate,uint16 issuanceCurrency,uint16 referenceCurrency)',
@@ -172,55 +170,123 @@ describe('Phase 10 venue adapter', () => {
   });
 
   it('maps hashed settled token ids through paginated canonical target series enumeration', async () => {
+    const wallet = address('a');
+    const held = new Map<bigint, bigint>([
+      [1007n, 3n],
+      [9n, 2n],
+    ]);
     const adapter = new CompletionVenueAdapter(
       new FakeClient((name, args) => {
         const offset = Number(args[0]);
         if (name === 'getSeriesPaginated') return offset === 0 ? [[7n], 2n] : [[9n], 2n];
         if (name === 'readData') return seriesData(fromSid(args[0]));
         if (name === 'tokenIds') return [BigInt(fromSid(args[0])), 1_000n + BigInt(fromSid(args[0]))];
-        if (name === 'getOwnedSeriesWithBalancesPaginated') {
-          const ownedOffset = Number(args[1]);
-          return ownedOffset === 0 ? [[1007n], [3n], 2n] : [[9n], [2n], 2n];
+        if (name === 'balanceOfBatch') {
+          const ids = args[1] as readonly bigint[];
+          return ids.map((id) => held.get(id) ?? 0n);
         }
         throw new Error(name);
       }),
       profile(),
     );
-    await expect(adapter.readPortfolio(address('a'), 1)).resolves.toMatchObject([
+    await expect(adapter.readPortfolio(wallet, 1)).resolves.toMatchObject([
       { seriesId: sid(7), tokenId: 1007n, tokenStatus: 'settled', balance: 3n },
       { seriesId: sid(9), tokenId: 9n, tokenStatus: 'issued', balance: 2n },
     ]);
   });
 
-  it('rejects owned token ids that cannot be mapped to a target series', async () => {
+  it('throws when balanceOfBatch returns a mismatched balance count', async () => {
     const adapter = new CompletionVenueAdapter(
       new FakeClient((name) => {
         if (name === 'getSeriesPaginated') return [[7n], 1n];
         if (name === 'readData') return seriesData(7);
         if (name === 'tokenIds') return [7n, 1007n];
-        if (name === 'getOwnedSeriesWithBalancesPaginated') return [[999n], [1n], 1n];
+        if (name === 'balanceOfBatch') return [1n];
         throw new Error(name);
       }),
       profile(),
     );
-    await expect(adapter.readPortfolio(address('a'), 10)).rejects.toThrow('not mapped');
+    await expect(adapter.readPortfolio(address('a'), 10)).rejects.toThrow('mismatched balance count');
   });
 
-  it('reconciles deferred recipient delivery only when the same parked index is not flushed', async () => {
+  it('derives won-count and delivery from IntexIssued logs and ownerBalances without getAuctionWonCount', async () => {
     const wallet = address('a');
+    let sawWonCount = false;
     const adapter = new CompletionVenueAdapter(
       new FakeClient(
         (name) => {
-          if (name === 'getAuctionWonCount') return 2n;
-          if (name === 'holderBalances') return [2n, 0n];
+          if (name === 'getAuctionWonCount') {
+            sawWonCount = true;
+            throw new Error('getAuctionWonCount must not be called');
+          }
+          if (name === 'ownerBalances') return [1n, 0n];
           if (name === 'tokenIds') return [7n, 1007n];
           throw new Error(name);
         },
         (event) => {
           if (event === 'IssuanceInstructionsReceived') return [{ args: { seriesId: 7n } }];
-          if (event === 'IssuanceMintDeferred') return [{ args: { idx: 4n, seriesId: 7n, recipient: wallet } }];
-          if (event === 'IssuanceMintFlushed') return [{ args: { idx: 4n, seriesId: 7n } }];
-          if (event === 'IntexIssued') return [{ args: { tokenId: 7n, to: wallet } }];
+          if (event === 'IntexIssued') return [{ args: { operator: wallet, tokenId: 7n, to: wallet, quantity: 1n } }];
+          return [];
+        },
+      ),
+      profile(),
+    );
+    await expect(adapter.readRecipientEvidence(sid(7), wallet)).resolves.toEqual({
+      seriesId: sid(7),
+      issuanceInstructionsReceived: true,
+      deferred: false,
+      deliveredEvent: true,
+      wonCount: 1n,
+      currentIssuedBalance: 1n,
+      currentSettledBalance: 0n,
+    });
+    expect(sawWonCount).toBe(false);
+  });
+
+  it('detects a parked issuance from the renamed IssuanceParked event when it is not applied', async () => {
+    const wallet = address('a');
+    const adapter = new CompletionVenueAdapter(
+      new FakeClient(
+        (name) => {
+          if (name === 'ownerBalances') return [0n, 0n];
+          if (name === 'tokenIds') return [7n, 1007n];
+          throw new Error(name);
+        },
+        (event) => {
+          if (event === 'IssuanceInstructionsReceived') return [{ args: { seriesId: 7n } }];
+          if (event === 'IssuanceParked') return [{ args: { idx: 4n, seriesId: 7n, recipient: wallet } }];
+          if (event === 'ParkedIssuanceApplied') return [];
+          if (event === 'IntexIssued') return [];
+          return [];
+        },
+      ),
+      profile(),
+    );
+    await expect(adapter.readRecipientEvidence(sid(7), wallet)).resolves.toEqual({
+      seriesId: sid(7),
+      issuanceInstructionsReceived: true,
+      deferred: true,
+      deliveredEvent: false,
+      wonCount: 0n,
+      currentIssuedBalance: 0n,
+      currentSettledBalance: 0n,
+    });
+  });
+
+  it('reconciles a parked issuance as delivered once the same index is applied', async () => {
+    const wallet = address('a');
+    const adapter = new CompletionVenueAdapter(
+      new FakeClient(
+        (name) => {
+          if (name === 'ownerBalances') return [2n, 0n];
+          if (name === 'tokenIds') return [7n, 1007n];
+          throw new Error(name);
+        },
+        (event) => {
+          if (event === 'IssuanceInstructionsReceived') return [{ args: { seriesId: 7n } }];
+          if (event === 'IssuanceParked') return [{ args: { idx: 4n, seriesId: 7n, recipient: wallet } }];
+          if (event === 'ParkedIssuanceApplied') return [{ args: { idx: 4n, seriesId: 7n } }];
+          if (event === 'IntexIssued') return [{ args: { operator: wallet, tokenId: 7n, to: wallet, quantity: 2n } }];
           return [];
         },
       ),

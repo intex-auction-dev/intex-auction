@@ -24,13 +24,13 @@ import {
 } from '@/bidding/commit-panel';
 
 describe('commit action rail presentation', () => {
-  it('keeps the approved strike wording and COEN symbol', () => {
+  it('labels the bid rate as a percentage of strike on the primary auction UI only', () => {
     expect(commitFormCopy.quantityHint(2)).toBe('Min – 2 Intexes.');
-    expect(commitFormCopy.bidRateHint(50_000)).toBe('Percent of Strike amount. Min – 5%.');
+    expect(commitFormCopy.bidRateHint(50_000)).toBe('Percent of strike. Min – 5%.');
     expect(commitFormCopy.bidRate(50_000)).toBe('5% of strike');
     expect(commitFormCopy.bond('Œ100')).toBe('Committing locks a refundable Œ100 bond.');
     expect(formatPaymentTokenAmount(100_000_000n * 10n ** 18n, 18, 'WCOEN')).toBe('Œ100,000,000');
-    expect(formatPromisAmount(100_000n * 10n ** 18n)).toBe('100,000');
+    expect(formatPromisAmount(100_000n * 10n ** 6n)).toBe('100,000');
     expect(formatFixedRate18(34n * 10n ** 18n)).toBe('34.00');
     expect(formatFixedRate18(34_005n * 10n ** 15n)).toBe('34.01');
   });
@@ -196,7 +196,7 @@ describe('commit action rail presentation', () => {
     expect(
       liveEntryPriceCopy({
         referenceCurrency: 840,
-        contractEntryPriceMinor: 1_000_000_000n,
+        contractEntryPriceMinor: 1_000_000n,
         liveOracleConversions: conversions,
         paymentTokenSymbol: 'wCOEN',
       }),
@@ -204,7 +204,7 @@ describe('commit action rail presentation', () => {
     expect(
       liveEntryPriceCopy({
         referenceCurrency: 840,
-        contractEntryPriceMinor: 1_000_000_000n,
+        contractEntryPriceMinor: 1_000_000n,
         liveOracleConversions: null,
         paymentTokenSymbol: 'wCOEN',
       }),
@@ -212,7 +212,7 @@ describe('commit action rail presentation', () => {
     expect(
       liveEntryPriceCopy({
         referenceCurrency: 840,
-        contractEntryPriceMinor: 1_000_000_000n,
+        contractEntryPriceMinor: 1_000_000n,
         liveOracleConversions: { byIsoCode: new Map() },
         paymentTokenSymbol: 'wCOEN',
       }),
@@ -220,7 +220,7 @@ describe('commit action rail presentation', () => {
     expect(
       liveEntryPriceCopy({
         referenceCurrency: 840,
-        contractEntryPriceMinor: 1_000_000_000n,
+        contractEntryPriceMinor: 1_000_000n,
         liveOracleConversions: null,
         paymentTokenSymbol: 'Wrapped COEN',
       }),
